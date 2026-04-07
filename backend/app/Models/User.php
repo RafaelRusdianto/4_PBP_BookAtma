@@ -20,8 +20,14 @@ class User extends Authenticatable
         'foto_profil'
     ];
 
+    protected $hidden = [
+        'password'
+    ];
+
+    public $timestamps = false;
+
     public function booking()
     {
-        return $this->hasMany(Booking::class, 'id_user');
+        return $this->hasMany(Booking::class, 'id_user', 'id_user');
     }
 }
