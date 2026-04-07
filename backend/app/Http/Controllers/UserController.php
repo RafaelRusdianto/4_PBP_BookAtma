@@ -3,11 +3,20 @@
 namespace App\Http\Controllers;
 
 use App\Models\User;
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Hash;
 
 class UserController extends Controller
 {
     public function register(Request $request)
     {
+        $request->validate([
+            'nama' => 'required|string|max:100',
+            'email' => 'required|email|unique:user,email',
+            'password' => 'required|string|min:6',
+            'no_hp' => 'required|string|max:20'
+        ]);
+
         $user = User::create([
             'nama' => $request->nama,
             'email' => $request->email,
@@ -15,56 +24,69 @@ class UserController extends Controller
             'no_hp' => $request->no_hp
         ]);
 
-        return response()->json($user);
+        return response()->json([
+            'message' => 'Register berhasil',
+            'data' => $user
+        ], 201);
     }
 
     public function login(Request $request)
     {
-        $user = User::where('email',$request->email)->first();
+        $request->validate([
+            'email' => 'required|email',
+            'password' => 'required'
+        ]);
 
-        if(!$user || !Hash::check($request->password,$user->password)){
+        $user = User::where('email', $request->email)->first();
+
+        if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json([
                 'message' => 'Email atau password salah'
-            ],401);
+            ], 401);
         }
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
+            'message' => 'Login berhasil',
             'user' => $user,
             'token' => $token
-        ]);
+        ], 200);
     }
-    
+
     public function googleLogin(Request $request)
     {
         $request->validate([
-            'email' => 'required',
-            'nama' => 'required'
+            'email' => 'required|email',
+            'nama' => 'required|string|max:100'
         ]);
 
-        $user = User::where('email',$request->email)->first();
+        $user = User::where('email', $request->email)->first();
 
-        if(!$user){
+        if (!$user) {
             $user = User::create([
-                'nama'=>$request->nama,
-                'email'=>$request->email,
-                'password'=>bcrypt('google_login'),
-                'no_hp'=>'-'
+                'nama' => $request->nama,
+                'email' => $request->email,
+                'password' => bcrypt('google_login'),
+                'no_hp' => '-'
             ]);
         }
 
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
-            'user'=>$user,
-            'token'=>$token
-        ]);
+            'message' => 'Login Google berhasil',
+            'user' => $user,
+            'token' => $token
+        ], 200);
     }
 
     public function profile(Request $request)
     {
-        return $request->user();
+        return response()->json([
+            'message' => 'Data profile berhasil diambil',
+            'data' => $request->user()
+        ], 200);
     }
 
     public function logout(Request $request)
@@ -73,6 +95,6 @@ class UserController extends Controller
 
         return response()->json([
             'message' => 'Logout berhasil'
-        ]);
+        ], 200);
     }
 }
