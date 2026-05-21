@@ -31,26 +31,54 @@ class AuthService {
     return false;
   }
 
-  Future<bool> register({
+  Future<Map<String, dynamic>> register({
+    required String nama,
     required String email,
     required String password,
+    required String noHp,
   }) async {
-    final response = await http.post(
-      Uri.parse('${ApiConfig.baseUrl}/register'),
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/register'),
 
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-      },
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
 
-      body: jsonEncode({
-        'email': email,
-        'password': password,
-        'password_confirmation': password,
-      }),
-    );
+        body: jsonEncode({
+          'nama': nama,
+          'email': email,
+          'password': password,
+          'no_hp': noHp,
+        }),
+      );
 
-    return response.statusCode == 200 || response.statusCode == 201;
+      final data = jsonDecode(response.body);
+
+      print(response.statusCode);
+      print(response.body);
+
+      if (response.statusCode == 201) {
+        return {'success': true, 'message': data['message']};
+      } else {
+        String errorMessage = 'Register gagal';
+
+        if (data['message'] != null) {
+          errorMessage = data['message'];
+        }
+
+        if (data['errors'] != null) {
+          final errors = data['errors'] as Map<String, dynamic>;
+
+          errorMessage = errors.values.first[0];
+        }
+
+        return {'success': false, 'message': errorMessage};
+      }
+    } catch (e) {
+      return {'success': false, 'message': 'Tidak dapat terhubung ke server'};
+    }
   }
 
   Future<void> logout() async {
