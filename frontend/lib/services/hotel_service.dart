@@ -1,84 +1,117 @@
 import 'dart:convert';
+
 import 'package:http/http.dart' as http;
 
 import '../config/api_config.dart';
 import '../models/hotel_model.dart';
 
 class HotelService {
-  static Future<List<HotelModel>> fetchHotels() async {
-    if (ApiConfig.useDummyData) {
-      await Future.delayed(const Duration(seconds: 1));
-      return dummyHotels;
+  Future<List<HotelModel>> getHotels({int? limit}) {
+    return fetchHotels(limit: limit);
+  }
+
+  Future<HotelModel> getHotelDetail(int idHotel, {HotelModel? baseHotel}) {
+    return fetchHotelDetail(idHotel, baseHotel: baseHotel);
+  }
+
+  Future<List<HotelModel>> getRecommendedHotels({int limit = 5}) {
+    return fetchHotels(limit: limit);
+  }
+
+  static Future<List<HotelModel>> fetchHotels({int? limit}) async {
+    final response = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/hotel'),
+      headers: const {'Accept': 'application/json'},
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Gagal memuat data hotel');
     }
 
+    final data = _extractData(response.body);
+
+    if (data is! List) {
+      throw Exception('Format data hotel tidak valid');
+    }
+
+    final hotels = data
+        .where((item) => item is Map)
+        .map((item) => HotelModel.fromJson(Map<String, dynamic>.from(item)))
+        .toList();
+
+    hotels.sort((a, b) => b.rating.compareTo(a.rating));
+
+    final selectedHotels = limit == null ? hotels : hotels.take(limit).toList();
+
+    return Future.wait(selectedHotels.map(_fetchDetailOrFallback));
+  }
+
+  static Future<HotelModel> fetchHotelDetail(
+    int idHotel, {
+    HotelModel? baseHotel,
+  }) async {
+    final response = await http.get(
+      Uri.parse('${ApiConfig.baseUrl}/hotel/$idHotel'),
+      headers: const {'Accept': 'application/json'},
+    );
+
+    if (response.statusCode != 200) {
+      throw Exception('Gagal memuat detail hotel');
+    }
+
+    final data = _extractData(response.body);
+
+    if (data is! Map) {
+      throw Exception('Format detail hotel tidak valid');
+    }
+
+    final detail = HotelModel.fromJson(Map<String, dynamic>.from(data));
+
+    return baseHotel == null ? detail : _mergeHotel(baseHotel, detail);
+  }
+
+  static Future<HotelModel> _fetchDetailOrFallback(HotelModel hotel) async {
+    if (hotel.idHotel <= 0) return hotel;
+
     try {
-      final response = await http.get(
-        Uri.parse('${ApiConfig.baseUrl}/hotels'),
-      );
-
-      if (response.statusCode == 200) {
-        final body = jsonDecode(response.body);
-        final List data = body['data'];
-
-        return data.map((item) => HotelModel.fromJson(item)).toList();
-      } else {
-        throw Exception('Gagal mengambil data hotel');
-      }
-    } catch (e) {
-      throw Exception(e.toString());
+      return await fetchHotelDetail(hotel.idHotel, baseHotel: hotel);
+    } catch (_) {
+      return hotel;
     }
   }
 
-  static List<HotelModel> dummyHotels = [
-    HotelModel(
-      id: 1,
-      name: 'The Ritz-Carlton Jakarta',
-      location: 'Menteng, Jakarta Pusat',
-      description:
-          'Hotel mewah dengan fasilitas lengkap, kamar nyaman, dan lokasi strategis di pusat Jakarta.',
-      rating: 4.9,
-      imageUrls: [
-        'https://images.unsplash.com/photo-1566073771259-6a8506099945?q=80&w=900',
-        'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?q=80&w=900',
-        'https://images.unsplash.com/photo-1618773928121-c32242e63f39?q=80&w=900',
-      ],
-      facilities: [
-        'Free WiFi',
-        'Pool',
-        'Gym',
-      ],
-      rooms: [
-        RoomModel(
-          id: 1,
-          hotelId: 1,
-          name: 'Deluxe Double Room with Balcony',
-          price: 1850000,
-          imageUrl:
-              'https://images.unsplash.com/photo-1618773928121-c32242e63f39?q=80&w=900',
-          capacity: 2,
-          bedType: '1 King Bed',
-          roomSize: 32,
-          benefits: [
-            'Breakfast for 2',
-            'Free WiFi',
-          ],
-        ),
-        RoomModel(
-          id: 2,
-          hotelId: 1,
-          name: 'Executive Suite with Ocean View',
-          price: 2450000,
-          imageUrl:
-              'https://images.unsplash.com/photo-1590490360182-c33d57733427?q=80&w=900',
-          capacity: 2,
-          bedType: '1 Super King',
-          roomSize: 48,
-          benefits: [
-            'Breakfast for 2',
-            'Bathtub',
-          ],
-        ),
-      ],
-    ),
-  ];
+  static HotelModel _mergeHotel(HotelModel baseHotel, HotelModel detailHotel) {
+    final imageUrls = detailHotel.imageUrls.isNotEmpty
+        ? detailHotel.imageUrls
+        : baseHotel.imageUrls;
+
+    final rooms = detailHotel.rooms.isNotEmpty
+        ? detailHotel.rooms
+            .map((room) {
+              if (room.imageUrl.isNotEmpty || imageUrls.isEmpty) return room;
+
+              return room.copyWith(imageUrl: imageUrls.first);
+            })
+            .toList()
+        : baseHotel.rooms;
+
+    return detailHotel.copyWith(
+      imageUrls: imageUrls,
+      rooms: rooms,
+      facilities: detailHotel.facilities.isNotEmpty
+          ? detailHotel.facilities
+          : baseHotel.facilities,
+      hargaMulai: detailHotel.hargaMulai ?? baseHotel.hargaMulai,
+    );
+  }
+
+  static dynamic _extractData(String responseBody) {
+    final decoded = jsonDecode(responseBody);
+
+    if (decoded is Map && decoded.containsKey('data')) {
+      return decoded['data'];
+    }
+
+    return decoded;
+  }
 }

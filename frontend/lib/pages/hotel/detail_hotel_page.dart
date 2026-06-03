@@ -4,7 +4,6 @@ import '../../constants/app_colors.dart';
 import '../../core/format_helper.dart';
 import '../../models/hotel_model.dart';
 import '../../services/booking_service.dart';
-import '../../services/hotel_service.dart';
 
 class DetailHotelPage extends StatefulWidget {
   const DetailHotelPage({super.key});
@@ -19,9 +18,16 @@ class _DetailHotelPageState extends State<DetailHotelPage> {
   @override
   Widget build(BuildContext context) {
     final args = ModalRoute.of(context)?.settings.arguments;
-    final HotelModel hotel = args is HotelModel
-        ? args
-        : HotelService.dummyHotels.first;
+
+    if (args is! HotelModel) {
+      return Scaffold(
+        backgroundColor: AppColors.background,
+        appBar: AppBar(title: const Text('Detail Hotel')),
+        body: const Center(child: Text('Data hotel belum tersedia')),
+      );
+    }
+
+    final HotelModel hotel = args;
 
     double imageHeight = MediaQuery.of(context).size.height * 0.36;
 
