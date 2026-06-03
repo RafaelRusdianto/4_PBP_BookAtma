@@ -548,243 +548,280 @@ class _HomeContent extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final hotel = hotels.first;
-
-    return SafeArea(
-      top: false,
-      child: Column(
-        children: [
-          Container(
-            width: double.infinity,
-            padding: const EdgeInsets.fromLTRB(22, 52, 22, 30),
-            decoration: const BoxDecoration(
-              color: AppColors.primary,
-              borderRadius: BorderRadius.vertical(
-                bottom: Radius.circular(32),
-              ),
+    return Scaffold(
+      backgroundColor: AppColors.background,
+      body: SafeArea(
+        top: false,
+        child: Column(
+          children: [
+            Expanded(
+              child: _buildSelectedPage(context),
             ),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                const Text(
-                  '9:30 PM',
-                  style: TextStyle(
-                    color: AppColors.white,
-                    fontSize: 12,
-                  ),
-                ),
-                const SizedBox(height: 18),
-                Row(
-                  children: [
-                    const CircleAvatar(
-                      radius: 22,
-                      backgroundColor: AppColors.white,
-                      child: Icon(
-                        Icons.person,
-                        color: AppColors.primary,
-                      ),
-                    ),
-                    const SizedBox(width: 12),
-                    const Expanded(
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Text(
-                            'WELCOME BACK,',
-                            style: TextStyle(
-                              color: Colors.white70,
-                              fontSize: 10,
-                            ),
-                          ),
-                          Text(
-                            'Alex Johnson',
-                            style: TextStyle(
-                              color: AppColors.white,
-                              fontWeight: FontWeight.w800,
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    CircleAvatar(
-                      backgroundColor: Colors.white.withOpacity(0.2),
-                      child: const Icon(
-                        Icons.notifications_none,
-                        color: AppColors.white,
-                      ),
-                    ),
-                  ],
-                ),
-                const SizedBox(height: 22),
-                const Text(
-                  'Mau ke mana hari ini?',
-                  style: TextStyle(
-                    color: AppColors.white,
-                    fontSize: 25,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-              ],
-            ),
-          ),
 
-          Transform.translate(
-            offset: const Offset(0, -24),
-            child: Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
+            SafeArea(
+              top: false,
               child: Container(
-                padding: const EdgeInsets.all(14),
+                margin: const EdgeInsets.fromLTRB(20, 0, 20, 12),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                 decoration: BoxDecoration(
                   color: AppColors.white,
-                  borderRadius: BorderRadius.circular(26),
+                  borderRadius: BorderRadius.circular(32),
+                  border: Border.all(color: AppColors.borderInput),
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.06),
-                      blurRadius: 14,
+                      blurRadius: 16,
                       offset: const Offset(0, 8),
                     ),
                   ],
                 ),
                 child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceAround,
                   children: [
-                    const Expanded(
-                      child: _SearchItem(
-                        title: 'LOKASI',
-                        value: 'Mau ke mana?',
-                      ),
+                    _BottomNavItem(
+                      icon: Icons.home_rounded,
+                      label: 'Beranda',
+                      active: selectedNav == 0,
+                      onTap: () => onNavTap(0),
                     ),
-                    const Expanded(
-                      child: _SearchItem(
-                        title: 'TANGGAL',
-                        value: 'Pilih tang...',
-                      ),
+                    _BottomNavItem(
+                      icon: Icons.explore_outlined,
+                      label: 'Pencarian',
+                      active: selectedNav == 1,
+                      onTap: () => onNavTap(1),
                     ),
-                    const Expanded(
-                      child: _SearchItem(
-                        title: 'TAMU & KAMAR',
-                        value: '2 Dewasa...',
-                      ),
+                    _BottomNavItem(
+                      icon: Icons.receipt_long_outlined,
+                      label: 'Pesanan',
+                      active: selectedNav == 2,
+                      onTap: () => onNavTap(2),
                     ),
-                    CircleAvatar(
-                      backgroundColor: AppColors.primary,
-                      child: IconButton(
-                        onPressed: () {},
-                        icon: const Icon(
-                          Icons.search,
-                          color: AppColors.white,
-                          size: 20,
-                        ),
-                      ),
+                    _BottomNavItem(
+                      icon: Icons.person_outline,
+                      label: 'Saya',
+                      active: selectedNav == 3,
+                      onTap: () => onNavTap(3),
                     ),
                   ],
                 ),
               ),
             ),
-          ),
+          ],
+        ),
+      ),
+    );
+  }
 
-          Expanded(
-            child: SingleChildScrollView(
-              padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
-              child: Column(
+  Widget _buildSelectedPage(BuildContext context) {
+    if (selectedNav == 0) {
+      return _buildHomePageContent(context);
+    }
+
+    return const Center(
+      child: Text(
+        'ini nanti jadi navbar gitu',
+        style: TextStyle(
+          color: AppColors.black,
+          fontSize: 18,
+          fontWeight: FontWeight.w800,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildHomePageContent(BuildContext context) {
+    final hotel = hotels.first;
+
+    return Column(
+      children: [
+        Container(
+          width: double.infinity,
+          padding: const EdgeInsets.fromLTRB(22, 52, 22, 30),
+          decoration: const BoxDecoration(
+            color: AppColors.primary,
+            borderRadius: BorderRadius.vertical(
+              bottom: Radius.circular(32),
+            ),
+          ),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                '9:30 PM',
+                style: TextStyle(
+                  color: AppColors.white,
+                  fontSize: 12,
+                ),
+              ),
+              const SizedBox(height: 18),
+              Row(
                 children: [
-                  Row(
-                    children: [
-                      const Text(
-                        'Rekomendasi',
-                        style: TextStyle(
-                          color: AppColors.black,
-                          fontSize: 18,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                      const Spacer(),
-                      TextButton(
-                        onPressed: () {},
-                        child: const Text(
-                          'Lihat Semua',
+                  const CircleAvatar(
+                    radius: 22,
+                    backgroundColor: AppColors.white,
+                    child: Icon(
+                      Icons.person,
+                      color: AppColors.primary,
+                    ),
+                  ),
+                  const SizedBox(width: 12),
+                  const Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'WELCOME BACK,',
                           style: TextStyle(
-                            color: AppColors.primary,
+                            color: Colors.white70,
+                            fontSize: 10,
+                          ),
+                        ),
+                        Text(
+                          'Alex Johnson',
+                          style: TextStyle(
+                            color: AppColors.white,
                             fontWeight: FontWeight.w800,
                           ),
                         ),
-                      ),
-                    ],
+                      ],
+                    ),
                   ),
-                  const SizedBox(height: 10),
-
-                  _HotelCard(
-                    hotel: hotel,
-                    room: hotel.rooms.first,
-                    onTap: () {
-                      Navigator.pushNamed(
-                        context,
-                        '/hotel-detail',
-                        arguments: hotel,
-                      );
-                    },
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  _HotelCard(
-                    hotel: hotel,
-                    room: hotel.rooms.last,
-                    onTap: () {
-                      Navigator.pushNamed(
-                        context,
-                        '/hotel-detail',
-                        arguments: hotel,
-                      );
-                    },
+                  CircleAvatar(
+                    backgroundColor: Colors.white.withOpacity(0.2),
+                    child: const Icon(
+                      Icons.notifications_none,
+                      color: AppColors.white,
+                    ),
                   ),
                 ],
               ),
-            ),
+              const SizedBox(height: 22),
+              const Text(
+                'Mau ke mana hari ini?',
+                style: TextStyle(
+                  color: AppColors.white,
+                  fontSize: 25,
+                  fontWeight: FontWeight.w900,
+                ),
+              ),
+            ],
           ),
+        ),
 
-          SafeArea(
-            top: false,
+        Transform.translate(
+          offset: const Offset(0, -24),
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 20),
             child: Container(
-              margin: const EdgeInsets.fromLTRB(20, 0, 20, 12),
-              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+              padding: const EdgeInsets.all(14),
               decoration: BoxDecoration(
                 color: AppColors.white,
-                borderRadius: BorderRadius.circular(28),
-                border: Border.all(color: AppColors.borderInput),
+                borderRadius: BorderRadius.circular(26),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.06),
+                    blurRadius: 14,
+                    offset: const Offset(0, 8),
+                  ),
+                ],
               ),
               child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceAround,
                 children: [
-                  _BottomNavItem(
-                    icon: Icons.home,
-                    label: 'Beranda',
-                    active: selectedNav == 0,
-                    onTap: () => onNavTap(0),
+                  const Expanded(
+                    child: _SearchItem(
+                      title: 'LOKASI',
+                      value: 'Mau ke mana?',
+                    ),
                   ),
-                  _BottomNavItem(
-                    icon: Icons.explore_outlined,
-                    label: '',
-                    active: selectedNav == 1,
-                    onTap: () => onNavTap(1),
+                  const Expanded(
+                    child: _SearchItem(
+                      title: 'TANGGAL',
+                      value: 'Pilih tang...',
+                    ),
                   ),
-                  _BottomNavItem(
-                    icon: Icons.receipt_long_outlined,
-                    label: '',
-                    active: selectedNav == 2,
-                    onTap: () => onNavTap(2),
+                  const Expanded(
+                    child: _SearchItem(
+                      title: 'TAMU & KAMAR',
+                      value: '2 Dewasa...',
+                    ),
                   ),
-                  _BottomNavItem(
-                    icon: Icons.person_outline,
-                    label: '',
-                    active: selectedNav == 3,
-                    onTap: () => onNavTap(3),
+                  CircleAvatar(
+                    backgroundColor: AppColors.primary,
+                    child: IconButton(
+                      onPressed: () {},
+                      icon: const Icon(
+                        Icons.search,
+                        color: AppColors.white,
+                        size: 20,
+                      ),
+                    ),
                   ),
                 ],
               ),
             ),
           ),
-        ],
-      ),
+        ),
+
+        Expanded(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.fromLTRB(20, 0, 20, 14),
+            child: Column(
+              children: [
+                Row(
+                  children: [
+                    const Text(
+                      'Rekomendasi',
+                      style: TextStyle(
+                        color: AppColors.black,
+                        fontSize: 18,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                    const Spacer(),
+                    TextButton(
+                      onPressed: () {},
+                      child: const Text(
+                        'Lihat Semua',
+                        style: TextStyle(
+                          color: AppColors.primary,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 10),
+
+                _HotelCard(
+                  hotel: hotel,
+                  room: hotel.rooms.first,
+                  onTap: () {
+                    Navigator.pushNamed(
+                      context,
+                      '/hotel-detail',
+                      arguments: hotel,
+                    );
+                  },
+                ),
+
+                const SizedBox(height: 16),
+
+                _HotelCard(
+                  hotel: hotel,
+                  room: hotel.rooms.last,
+                  onTap: () {
+                    Navigator.pushNamed(
+                      context,
+                      '/hotel-detail',
+                      arguments: hotel,
+                    );
+                  },
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
     );
   }
 }
@@ -968,31 +1005,33 @@ class _BottomNavItem extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return InkWell(
-      borderRadius: BorderRadius.circular(22),
+      borderRadius: BorderRadius.circular(24),
       onTap: onTap,
-      child: Container(
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
         padding: EdgeInsets.symmetric(
-          horizontal: active ? 16 : 10,
-          vertical: 10,
+          horizontal: active ? 16 : 12,
+          vertical: 11,
         ),
         decoration: BoxDecoration(
           color: active ? AppColors.primary : Colors.transparent,
-          borderRadius: BorderRadius.circular(22),
+          borderRadius: BorderRadius.circular(24),
         ),
         child: Row(
+          mainAxisSize: MainAxisSize.min,
           children: [
             Icon(
               icon,
               color: active ? AppColors.white : AppColors.placeholder,
-              size: 18,
+              size: 19,
             ),
-            if (active && label.isNotEmpty) ...[
-              const SizedBox(width: 6),
+            if (active) ...[
+              const SizedBox(width: 7),
               Text(
                 label,
                 style: const TextStyle(
                   color: AppColors.white,
-                  fontSize: 11,
+                  fontSize: 12,
                   fontWeight: FontWeight.w800,
                 ),
               ),
