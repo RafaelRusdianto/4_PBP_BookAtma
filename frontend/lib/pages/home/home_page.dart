@@ -1,61 +1,24 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../models/hotel_model.dart';
+import '../../services/hotel_service.dart';
 
-final List<Map<String, dynamic>> hotelRecommendations = [
-  {
-    'image':
-        'https://images.unsplash.com/photo-1522708323590-d24dbb6b0267?w=900',
-    'name': 'The Ritz - Carlton Jakarta',
-    'location': 'Menteng, Jakarta Pusat',
-    'bed': 3,
-    'guest': 4,
-    'rating': 4.7,
-    'price': 940000,
-  },
-  {
-    'image':
-        'https://images.unsplash.com/photo-1501117716987-c8e5cae45ed3?w=900',
-    'name': 'Kimpton Bangkok',
-    'location': 'Bangkok, Thailand',
-    'bed': 2,
-    'guest': 2,
-    'rating': 4.9,
-    'price': 120000,
-  },
-  {
-    'image':
-        'https://images.unsplash.com/photo-1505693416388-ac5ce068fe85?w=900',
-    'name': 'Mandarin Oriental',
-    'location': 'Singapore',
-    'bed': 2,
-    'guest': 3,
-    'rating': 4.8,
-    'price': 260000,
-  },
-  {
-    'image': 'https://images.unsplash.com/photo-1542314831-068cd1dbfeeb?w=900',
-    'name': 'Bali Beach Resort',
-    'location': 'Bali, Indonesia',
-    'bed': 2,
-    'guest': 4,
-    'rating': 4.6,
-    'price': 180000,
-  },
-  {
-    'image':
-        'https://images.unsplash.com/photo-1494526585095-c41746248156?w=900',
-    'name': 'Yogyakarta Suites',
-    'location': 'Yogyakarta, Indonesia',
-    'bed': 1,
-    'guest': 2,
-    'rating': 4.5,
-    'price': 54000,
-  },
-];
-
-class HomePage extends StatelessWidget {
+class HomePage extends StatefulWidget {
   const HomePage({super.key});
+
+  @override
+  State<HomePage> createState() => _HomePageState();
+}
+
+class _HomePageState extends State<HomePage> {
+  late final Future<List<HotelModel>> _recommendationsFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _recommendationsFuture = HotelService().getRecommendedHotels(limit: 5);
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -84,19 +47,13 @@ class HomePage extends StatelessWidget {
                       child: _buildSectionHeader(),
                     ),
                   ),
-                  if (hotelRecommendations.isNotEmpty)
-                    Transform.translate(
-                      offset: const Offset(0, -4),
-                      child: Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 20),
-                        child: Column(
-                          children: hotelRecommendations
-                              .take(5)
-                              .map((hotel) => _HotelCard(hotel: hotel))
-                              .toList(),
-                        ),
-                      ),
+                  Transform.translate(
+                    offset: const Offset(0, -4),
+                    child: Padding(
+                      padding: const EdgeInsets.symmetric(horizontal: 20),
+                      child: _buildRecommendationList(),
                     ),
+                  ),
                 ],
               ),
             ),
@@ -109,6 +66,42 @@ class HomePage extends StatelessWidget {
           ],
         ),
       ),
+    );
+  }
+
+  Widget _buildRecommendationList() {
+    return FutureBuilder<List<HotelModel>>(
+      future: _recommendationsFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState == ConnectionState.waiting) {
+          return const Padding(
+            padding: EdgeInsets.symmetric(vertical: 36),
+            child: Center(
+              child: CircularProgressIndicator(
+                valueColor: AlwaysStoppedAnimation(AppColors.primary),
+              ),
+            ),
+          );
+        }
+
+        if (snapshot.hasError) {
+          return const _RecommendationMessage(
+            message: 'Gagal memuat data hotel',
+          );
+        }
+
+        final hotels = snapshot.data ?? [];
+
+        if (hotels.isEmpty) {
+          return const _RecommendationMessage(
+            message: 'Belum ada rekomendasi hotel',
+          );
+        }
+
+        return Column(
+          children: hotels.map((hotel) => _HotelCard(hotel: hotel)).toList(),
+        );
+      },
     );
   }
 
@@ -229,14 +222,6 @@ class HomePage extends StatelessWidget {
             fontWeight: FontWeight.w900,
           ),
         ),
-        Text(
-          'Lihat Semua',
-          style: TextStyle(
-            color: AppColors.primary,
-            fontSize: 13,
-            fontWeight: FontWeight.w800,
-          ),
-        ),
       ],
     );
   }
@@ -333,7 +318,7 @@ class _SearchItem extends StatelessWidget {
 class _HotelCard extends StatelessWidget {
   const _HotelCard({required this.hotel});
 
-  final Map<String, dynamic> hotel;
+  final HotelModel hotel;
 
   @override
   Widget build(BuildContext context) {
@@ -359,27 +344,7 @@ class _HotelCard extends StatelessWidget {
                 height: 190,
                 width: double.infinity,
                 color: AppColors.softBlue,
-                child: Image.network(
-                  hotel['image'],
-                  fit: BoxFit.cover,
-                  loadingBuilder: (context, child, progress) {
-                    if (progress == null) return child;
-                    return const Center(
-                      child: CircularProgressIndicator(
-                        valueColor: AlwaysStoppedAnimation(AppColors.primary),
-                      ),
-                    );
-                  },
-                  errorBuilder: (context, error, stackTrace) {
-                    return const Center(
-                      child: Icon(
-                        Icons.image_not_supported_outlined,
-                        size: 40,
-                        color: AppColors.mutedText,
-                      ),
-                    );
-                  },
-                ),
+                child: _HotelImage(imageUrl: hotel.imageUrl),
               ),
               Positioned(
                 left: 18,
@@ -395,7 +360,7 @@ class _HotelCard extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        hotel['name'],
+                        hotel.nama,
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 17,
@@ -405,15 +370,47 @@ class _HotelCard extends StatelessWidget {
                         overflow: TextOverflow.ellipsis,
                       ),
                       const SizedBox(height: 4),
-                      Text(
-                        '📍 ${hotel['location']}',
-                        style: const TextStyle(
-                          color: Colors.white70,
-                          fontSize: 12,
-                        ),
-                        maxLines: 1,
-                        overflow: TextOverflow.ellipsis,
+                      Row(
+                        children: [
+                          const Icon(
+                            Icons.location_on_outlined,
+                            color: Colors.white70,
+                            size: 14,
+                          ),
+                          const SizedBox(width: 4),
+                          Expanded(
+                            child: Text(
+                              hotel.alamat,
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                            ),
+                          ),
+                        ],
                       ),
+                      if (hotel.kapasitas != null) ...[
+                        const SizedBox(height: 3),
+                        Row(
+                          children: [
+                            const Icon(
+                              Icons.people_outline,
+                              color: Colors.white70,
+                              size: 14,
+                            ),
+                            const SizedBox(width: 4),
+                            Text(
+                              'Maks. ${hotel.kapasitas} tamu',
+                              style: const TextStyle(
+                                color: Colors.white70,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
                     ],
                   ),
                 ),
@@ -427,29 +424,27 @@ class _HotelCard extends StatelessWidget {
                 const Icon(Icons.star, color: Colors.amber, size: 17),
                 const SizedBox(width: 6),
                 Text(
-                  hotel['rating'].toStringAsFixed(1),
+                  hotel.avgRating.toStringAsFixed(1),
                   style: const TextStyle(
                     fontWeight: FontWeight.w900,
                     fontSize: 13,
                   ),
                 ),
                 const SizedBox(width: 4),
-                Text(
+                const Text(
                   '(Review)',
-                  style: const TextStyle(
-                    fontSize: 12,
-                    color: AppColors.mutedText,
-                  ),
+                  style: TextStyle(fontSize: 12, color: AppColors.mutedText),
                 ),
                 const Spacer(),
-                Text(
-                  _formatRupiah(hotel['price']),
-                  style: const TextStyle(
-                    color: AppColors.primary,
-                    fontWeight: FontWeight.w900,
-                    fontSize: 14,
+                if (hotel.hargaMulai != null)
+                  Text(
+                    hotel.hargaMulai!,
+                    style: const TextStyle(
+                      color: AppColors.primary,
+                      fontWeight: FontWeight.w900,
+                      fontSize: 14,
+                    ),
                   ),
-                ),
               ],
             ),
           ),
@@ -457,16 +452,78 @@ class _HotelCard extends StatelessWidget {
       ),
     );
   }
+}
 
-  String _formatRupiah(dynamic value) {
-    if (value == null) return 'Rp -';
-    final amount = value is num
-        ? value.toInt()
-        : int.tryParse(value.toString().replaceAll(RegExp('[^0-9]'), '')) ?? 0;
-    final formatted = amount.toString().replaceAllMapped(
-      RegExp(r'\B(?=(\d{3})+(?!\d))'),
-      (match) => '.',
+class _HotelImage extends StatelessWidget {
+  const _HotelImage({required this.imageUrl});
+
+  final String? imageUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    if (imageUrl == null || imageUrl!.isEmpty) {
+      return const _ImagePlaceholder();
+    }
+
+    return Image.network(
+      imageUrl!,
+      fit: BoxFit.cover,
+      loadingBuilder: (context, child, progress) {
+        if (progress == null) return child;
+
+        return const Center(
+          child: CircularProgressIndicator(
+            valueColor: AlwaysStoppedAnimation(AppColors.primary),
+          ),
+        );
+      },
+      errorBuilder: (context, error, stackTrace) {
+        return const _ImagePlaceholder();
+      },
     );
-    return 'Rp $formatted';
+  }
+}
+
+class _ImagePlaceholder extends StatelessWidget {
+  const _ImagePlaceholder();
+
+  @override
+  Widget build(BuildContext context) {
+    return const Center(
+      child: Icon(
+        Icons.image_not_supported_outlined,
+        size: 40,
+        color: AppColors.mutedText,
+      ),
+    );
+  }
+}
+
+class _RecommendationMessage extends StatelessWidget {
+  const _RecommendationMessage({required this.message});
+
+  final String message;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      margin: const EdgeInsets.only(bottom: 22),
+      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 24),
+      decoration: BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.circular(18),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Text(
+        message,
+        textAlign: TextAlign.center,
+        style: const TextStyle(
+          color: AppColors.mutedText,
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
   }
 }

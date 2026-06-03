@@ -12,9 +12,9 @@ Route::get('/booking/{id}', [BookingController::class, 'show']);
 Route::post('/booking', [BookingController::class, 'store']);
 Route::get('/booking/user/{id}', [BookingController::class, 'userBooking']);
 
+Route::get('/hotel/search', [HotelController::class, 'search']);
 Route::get('/hotel', [HotelController::class, 'index']);
 Route::get('/hotel/{id}', [HotelController::class, 'show']);
-Route::get('/hotel/search', [HotelController::class, 'search']);
 
 Route::post('/pembayaran', [PembayaranController::class, 'store']);
 Route::get('/pembayaran/{id}', [PembayaranController::class, 'show']);
