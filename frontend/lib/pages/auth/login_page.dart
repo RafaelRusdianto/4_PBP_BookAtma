@@ -60,7 +60,7 @@ class _LoginPageState extends State<LoginPage> {
     });
 
     if (result['success'] == true) {
-      Navigator.of(context).pushReplacementNamed(AppRoutes.home);
+      Navigator.of(context).pushReplacementNamed(AppRoutes.main);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(

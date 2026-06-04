@@ -4,8 +4,6 @@ import '../../constants/app_colors.dart';
 import '../../models/hotel_model.dart';
 import '../../services/hotel_service.dart';
 
-import '../../widgets/bottom_navbar.dart';
-
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -66,7 +64,6 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       ),
-      bottomNavigationBar: const BottomNavbar(),
     );
   }
 

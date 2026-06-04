@@ -38,7 +38,7 @@ class VoucherPage extends StatelessWidget {
                     onPressed: () {
                       Navigator.pushNamedAndRemoveUntil(
                         context,
-                        '/home',
+                        '/main',
                         (route) => false,
                       );
                     },
@@ -284,7 +284,7 @@ class VoucherPage extends StatelessWidget {
                         onPressed: () {
                           Navigator.pushNamedAndRemoveUntil(
                             context,
-                            '/home',
+                            '/main',
                             (route) => false,
                           );
                         },

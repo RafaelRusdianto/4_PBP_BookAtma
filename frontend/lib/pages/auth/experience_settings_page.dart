@@ -30,7 +30,7 @@ class _ExperienceSettingsPageState extends State<ExperienceSettingsPage> {
 
             Navigator.of(
               context,
-            ).pushNamedAndRemoveUntil(AppRoutes.home, (route) => false);
+            ).pushNamedAndRemoveUntil(AppRoutes.main, (route) => false);
           },
         );
       },
