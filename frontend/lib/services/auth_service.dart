@@ -6,29 +6,53 @@ import 'package:shared_preferences/shared_preferences.dart';
 import '../config/api_config.dart';
 
 class AuthService {
-  Future<bool> login({required String email, required String password}) async {
-    final response = await http.post(
-      Uri.parse('${ApiConfig.baseUrl}/login'),
+  Future<Map<String, dynamic>> login({
+    required String email,
+    required String password,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/login'),
 
-      headers: {
-        'Accept': 'application/json',
-        'Content-Type': 'application/json',
-      },
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
 
-      body: jsonEncode({'email': email, 'password': password}),
-    );
+        body: jsonEncode({'email': email, 'password': password}),
+      );
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
+      final data = _decodeObject(response.body);
 
-      final prefs = await SharedPreferences.getInstance();
+      if (response.statusCode == 200) {
+        final token = data['token'];
 
-      await prefs.setString('token', data['token']);
+        if (token is! String || token.isEmpty) {
+          return {
+            'success': false,
+            'message': 'Token login tidak ditemukan di response server',
+          };
+        }
 
-      return true;
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('token', token);
+
+        return {
+          'success': true,
+          'message': data['message'] ?? 'Login berhasil',
+        };
+      }
+
+      return {
+        'success': false,
+        'message': _errorMessage(data, fallback: 'Email atau password salah'),
+      };
+    } catch (_) {
+      return {
+        'success': false,
+        'message': 'Tidak dapat terhubung ke server. Periksa backend dan URL API.',
+      };
     }
-
-    return false;
   }
 
   Future<Map<String, dynamic>> register({
@@ -93,5 +117,39 @@ class AuthService {
     );
 
     await prefs.remove('token');
+  }
+
+  Map<String, dynamic> _decodeObject(String responseBody) {
+    try {
+      final decoded = jsonDecode(responseBody);
+
+      if (decoded is Map<String, dynamic>) return decoded;
+      if (decoded is Map) return Map<String, dynamic>.from(decoded);
+    } catch (_) {
+      return {};
+    }
+
+    return {};
+  }
+
+  String _errorMessage(
+    Map<String, dynamic> data, {
+    required String fallback,
+  }) {
+    final message = data['message'];
+    if (message is String && message.isNotEmpty) return message;
+
+    final errors = data['errors'];
+    if (errors is Map && errors.isNotEmpty) {
+      final firstError = errors.values.first;
+
+      if (firstError is List && firstError.isNotEmpty) {
+        return firstError.first.toString();
+      }
+
+      return firstError.toString();
+    }
+
+    return fallback;
   }
 }

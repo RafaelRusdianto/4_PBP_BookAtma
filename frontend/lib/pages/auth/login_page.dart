@@ -27,6 +27,7 @@ class _LoginPageState extends State<LoginPage> {
   final _passwordController = TextEditingController();
 
   bool _obscurePassword = true;
+  bool _isSubmitting = false;
 
   @override
   void dispose() {
@@ -37,22 +38,36 @@ class _LoginPageState extends State<LoginPage> {
   }
 
   Future<void> _submit() async {
+    if (_isSubmitting) return;
+
     if (!(_formKey.currentState?.validate() ?? false)) {
       return;
     }
 
-    final success = await AuthService().login(
+    setState(() {
+      _isSubmitting = true;
+    });
+
+    final result = await AuthService().login(
       email: _emailController.text.trim(),
       password: _passwordController.text,
     );
 
     if (!mounted) return;
 
-    if (success) {
+    setState(() {
+      _isSubmitting = false;
+    });
+
+    if (result['success'] == true) {
       Navigator.of(context).pushReplacementNamed(AppRoutes.home);
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Email atau password salah')),
+        SnackBar(
+          content: Text(
+            result['message']?.toString() ?? 'Email atau password salah',
+          ),
+        ),
       );
     }
   }
@@ -119,7 +134,10 @@ class _LoginPageState extends State<LoginPage> {
 
             const SizedBox(height: 22),
 
-            PrimaryButton(label: 'Masuk', onPressed: _submit),
+            PrimaryButton(
+              label: _isSubmitting ? 'Memproses...' : 'Masuk',
+              onPressed: _isSubmitting ? null : _submit,
+            ),
 
             const SizedBox(height: 24),
 

@@ -4,6 +4,8 @@ import '../../constants/app_colors.dart';
 import '../../models/hotel_model.dart';
 import '../../services/hotel_service.dart';
 
+import '../../widgets/bottom_navbar.dart';
+
 class HomePage extends StatefulWidget {
   const HomePage({super.key});
 
@@ -64,6 +66,7 @@ class _HomePageState extends State<HomePage> {
           ),
         ),
       ),
+      bottomNavigationBar: const BottomNavbar(),
     );
   }
 
@@ -207,10 +210,7 @@ class _SearchItem extends StatelessWidget {
   final String title;
   final String value;
 
-  const _SearchItem({
-    required this.title,
-    required this.value,
-  });
+  const _SearchItem({required this.title, required this.value});
 
   @override
   Widget build(BuildContext context) {
@@ -248,10 +248,7 @@ class _HotelCard extends StatelessWidget {
   final HotelModel hotel;
   final VoidCallback onTap;
 
-  const _HotelCard({
-    required this.hotel,
-    required this.onTap,
-  });
+  const _HotelCard({required this.hotel, required this.onTap});
 
   @override
   Widget build(BuildContext context) {
