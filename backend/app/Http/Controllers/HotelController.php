@@ -39,10 +39,71 @@ class HotelController extends Controller
 
     public function search(Request $request)
     {
-        $keyword = $request->keyword;
+        $keyword = $request->query('keyword');
+        $guest = $request->query('guest');
+        $checkIn = $request->query('check_in');
+        $checkOut = $request->query('check_out');
+        $currentProvince = $request->query('current_province');
 
-        $hotel = Hotel::with(['foto'])
-            ->where('nama_hotel', 'like', '%' . $keyword . '%')
+        $roomFilter = function ($kamarQuery) use ($guest, $checkIn, $checkOut) {
+            $kamarQuery->where('status', 'available');
+
+            if ($guest) {
+                $kamarQuery->where('kapasitas', '>=', $guest);
+            }
+
+            if ($checkIn && $checkOut) {
+                $kamarQuery->whereDoesntHave('detailBooking.booking', function ($bookingQuery) use ($checkIn, $checkOut) {
+                    $bookingQuery
+                        ->whereNotIn('status', ['cancelled', 'canceled', 'dibatalkan'])
+                        ->whereDate('check_in', '<', $checkOut)
+                        ->whereDate('check_out', '>', $checkIn);
+                });
+            }
+        };
+
+        $hotel = Hotel::with([
+            'foto',
+            'provinsi',
+            'kamar' => function ($query) use ($roomFilter) {
+                $roomFilter($query);
+                $query->with(['foto', 'fasilitas']);
+            },
+        ])
+            ->when($currentProvince, function ($query) use ($currentProvince) {
+                $query->where(function ($subQuery) use ($currentProvince) {
+                    $subQuery
+                        ->where('alamat', 'like', '%' . $currentProvince . '%')
+                        ->orWhereHas('provinsi', function ($provinsiQuery) use ($currentProvince) {
+                            $provinsiQuery->where('nama_provinsi', 'like', '%' . $currentProvince . '%');
+                        });
+                });
+            })
+            ->when(!$currentProvince && $keyword, function ($query) use ($keyword) {
+                $query->where(function ($subQuery) use ($keyword) {
+                    $subQuery
+                        ->where('nama', 'like', '%' . $keyword . '%')
+                        ->orWhere('alamat', 'like', '%' . $keyword . '%')
+                        ->orWhereHas('provinsi', function ($provinsiQuery) use ($keyword) {
+                            $provinsiQuery->where('nama_provinsi', 'like', '%' . $keyword . '%');
+                        });
+                });
+            })
+            ->whereHas('kamar', $roomFilter)
+            ->when($keyword && !$currentProvince, function ($query) use ($keyword) {
+                $query->orderByRaw(
+                    "CASE 
+                        WHEN nama LIKE ? THEN 0
+                        WHEN alamat LIKE ? THEN 1
+                        ELSE 2
+                    END",
+                    [
+                        '%' . $keyword . '%',
+                        '%' . $keyword . '%',
+                    ]
+                );
+            })
+            ->orderByDesc('avg_rating')
             ->get();
 
         return response()->json([

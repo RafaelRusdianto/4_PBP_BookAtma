@@ -3,9 +3,17 @@ import 'package:flutter/material.dart';
 import '../../constants/app_colors.dart';
 import '../../models/hotel_model.dart';
 import '../../services/hotel_service.dart';
+import '../../models/search_filter_model.dart';
 
 class HomePage extends StatefulWidget {
-  const HomePage({super.key});
+  // const HomePage({super.key});
+
+  final ValueChanged<SearchFilterModel>? onSearchSubmitted;
+
+  const HomePage({
+    super.key,
+    this.onSearchSubmitted,
+  });
 
   @override
   State<HomePage> createState() => _HomePageState();
@@ -14,10 +22,278 @@ class HomePage extends StatefulWidget {
 class _HomePageState extends State<HomePage> {
   late final Future<List<HotelModel>> hotelsFuture;
 
+  String searchKeyword = '';
+  DateTime? checkIn;
+  DateTime? checkOut;
+  int guests = 2;
+
   @override
   void initState() {
     super.initState();
     hotelsFuture = HotelService.fetchHotels(limit: 5);
+  }
+
+  String get locationText {
+    return searchKeyword.trim().isEmpty ? 'Mau ke mana?' : searchKeyword.trim();
+  }
+
+  String get dateText {
+    return SearchFilterModel(
+      checkIn: checkIn,
+      checkOut: checkOut,
+    ).dateText;
+  }
+
+  String get guestText {
+    return '$guests Dewasa...';
+  }
+
+  void _submitSearch() {
+    final filter = SearchFilterModel(
+      keyword: searchKeyword.trim(),
+      checkIn: checkIn,
+      checkOut: checkOut,
+      guests: guests,
+    );
+
+    widget.onSearchSubmitted?.call(filter);
+  }
+
+  Future<void> _openSearchSheet() async {
+    final keywordController = TextEditingController(text: searchKeyword);
+    DateTime? tempCheckIn = checkIn;
+    DateTime? tempCheckOut = checkOut;
+    int tempGuests = guests;
+
+    await showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (context) {
+        return StatefulBuilder(
+          builder: (context, setModalState) {
+            return Container(
+              padding: EdgeInsets.only(
+                left: 24,
+                right: 24,
+                top: 22,
+                bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+              ),
+              decoration: const BoxDecoration(
+                color: AppColors.white,
+                borderRadius: BorderRadius.vertical(
+                  top: Radius.circular(28),
+                ),
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(
+                    children: [
+                      const Text(
+                        'Cari Hotel',
+                        style: TextStyle(
+                          color: AppColors.black,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                      const Spacer(),
+                      IconButton(
+                        onPressed: () => Navigator.pop(context),
+                        icon: const Icon(Icons.close),
+                      ),
+                    ],
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  TextField(
+                    controller: keywordController,
+                    decoration: InputDecoration(
+                      hintText: 'Masukkan lokasi atau nama hotel',
+                      prefixIcon: const Icon(Icons.search),
+                      filled: true,
+                      fillColor: const Color(0xFFF1F3FF),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        borderSide: BorderSide.none,
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 16),
+
+                  InkWell(
+                    borderRadius: BorderRadius.circular(18),
+                    onTap: () async {
+                      final picked = await showDateRangePicker(
+                        context: context,
+                        firstDate: DateTime.now(),
+                        lastDate: DateTime(DateTime.now().year + 2),
+                        initialDateRange:
+                            tempCheckIn != null && tempCheckOut != null
+                                ? DateTimeRange(
+                                    start: tempCheckIn!,
+                                    end: tempCheckOut!,
+                                  )
+                                : null,
+                      );
+
+                      if (picked != null) {
+                        setModalState(() {
+                          tempCheckIn = picked.start;
+                          tempCheckOut = picked.end;
+                        });
+                      }
+                    },
+                    child: Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(16),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFFF8FAFC),
+                        borderRadius: BorderRadius.circular(18),
+                        border: Border.all(color: AppColors.borderInput),
+                      ),
+                      child: Row(
+                        children: [
+                          const Icon(
+                            Icons.calendar_month_outlined,
+                            color: AppColors.primary,
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: Text(
+                              SearchFilterModel(
+                                checkIn: tempCheckIn,
+                                checkOut: tempCheckOut,
+                              ).dateText,
+                              style: const TextStyle(
+                                color: AppColors.black,
+                                fontWeight: FontWeight.w800,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ),
+
+                  const SizedBox(height: 18),
+
+                  Container(
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFFF8FAFC),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: AppColors.borderInput),
+                    ),
+                    child: Row(
+                      children: [
+                        const Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Jumlah Tamu',
+                                style: TextStyle(
+                                  color: AppColors.black,
+                                  fontSize: 15,
+                                  fontWeight: FontWeight.w900,
+                                ),
+                              ),
+                              SizedBox(height: 3),
+                              Text(
+                                'Adults',
+                                style: TextStyle(
+                                  color: AppColors.placeholder,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+
+                        _HomeCounterButton(
+                          icon: Icons.remove,
+                          onTap: () {
+                            if (tempGuests > 1) {
+                              setModalState(() {
+                                tempGuests--;
+                              });
+                            }
+                          },
+                        ),
+
+                        const SizedBox(width: 16),
+
+                        Text(
+                          '$tempGuests',
+                          style: const TextStyle(
+                            color: AppColors.black,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+
+                        const SizedBox(width: 16),
+
+                        _HomeCounterButton(
+                          icon: Icons.add,
+                          active: true,
+                          onTap: () {
+                            setModalState(() {
+                              tempGuests++;
+                            });
+                          },
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  const SizedBox(height: 22),
+
+                  SizedBox(
+                    width: double.infinity,
+                    height: 54,
+                    child: ElevatedButton(
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: AppColors.primary,
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(24),
+                        ),
+                        elevation: 8,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          searchKeyword = keywordController.text.trim();
+                          checkIn = tempCheckIn;
+                          checkOut = tempCheckOut;
+                          guests = tempGuests;
+                        });
+
+                        Navigator.pop(context);
+                        _submitSearch();
+                      },
+                      child: const Text(
+                        'Search',
+                        style: TextStyle(
+                          color: AppColors.white,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            );
+          },
+        );
+      },
+    );
+
+    keywordController.dispose();
   }
 
   @override
@@ -143,19 +419,28 @@ class _HomePageState extends State<HomePage> {
       ),
       child: Row(
         children: [
-          const Expanded(
-            child: _SearchItem(title: 'LOKASI', value: 'Mau ke mana?'),
+          Expanded(
+            child: GestureDetector(
+              onTap: _openSearchSheet,
+              child: _SearchItem(title: 'LOKASI', value: locationText),
+            ),
           ),
-          const Expanded(
-            child: _SearchItem(title: 'TANGGAL', value: 'Pilih tang...'),
+          Expanded(
+            child: GestureDetector(
+              onTap: _openSearchSheet,
+              child: _SearchItem(title: 'TANGGAL', value: dateText),
+            ),
           ),
-          const Expanded(
-            child: _SearchItem(title: 'TAMU & KAMAR', value: '2 Dewasa...'),
+          Expanded(
+            child: GestureDetector(
+              onTap: _openSearchSheet,
+              child: _SearchItem(title: 'TAMU & KAMAR', value: guestText),
+            ),
           ),
           CircleAvatar(
             backgroundColor: AppColors.primary,
             child: IconButton(
-              onPressed: () {},
+              onPressed: _openSearchSheet,
               icon: const Icon(Icons.search, color: AppColors.white, size: 20),
             ),
           ),
@@ -431,6 +716,40 @@ class _EmptyState extends StatelessWidget {
         style: const TextStyle(
           color: AppColors.textDisabled,
           fontWeight: FontWeight.w700,
+        ),
+      ),
+    );
+  }
+}
+
+class _HomeCounterButton extends StatelessWidget {
+  final IconData icon;
+  final bool active;
+  final VoidCallback onTap;
+
+  const _HomeCounterButton({
+    required this.icon,
+    required this.onTap,
+    this.active = false,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(18),
+      onTap: onTap,
+      child: Container(
+        width: 36,
+        height: 36,
+        decoration: BoxDecoration(
+          color: active ? AppColors.primary : AppColors.white,
+          shape: BoxShape.circle,
+          border: Border.all(color: AppColors.primary),
+        ),
+        child: Icon(
+          icon,
+          color: active ? AppColors.white : AppColors.primary,
+          size: 20,
         ),
       ),
     );
