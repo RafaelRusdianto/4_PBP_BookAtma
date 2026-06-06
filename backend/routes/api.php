@@ -30,6 +30,7 @@ Route::post('/google-login', [UserController::class, 'googleLogin']);
 
 Route::middleware('auth:sanctum')->group(function () {
     Route::get('/profile', [UserController::class, 'profile']);
+    Route::post('/profile/update', [UserController::class, 'updateProfile']);
     Route::post('/logout', [UserController::class, 'logout']);
 });
 

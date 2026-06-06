@@ -12,7 +12,7 @@ class UserController extends Controller
     {
         $request->validate([
             'nama' => 'required|string|max:100',
-            'email' => 'required|email|unique:user,email',
+            'email' => 'required|email|unique:users,email',
             'password' => 'required|string|min:6',
             'no_hp' => 'required|string|max:20'
         ]);
@@ -86,6 +86,25 @@ class UserController extends Controller
         return response()->json([
             'message' => 'Data profile berhasil diambil',
             'data' => $request->user()
+        ], 200);
+    }
+
+    public function updateProfile(Request $request)
+    {
+        $request->validate([
+            'nama' => 'required|string|max:100',
+            'no_hp' => 'required|string|max:20'
+        ]);
+
+        $user = $request->user();
+        $user->update([
+            'nama' => $request->nama,
+            'no_hp' => $request->no_hp
+        ]);
+
+        return response()->json([
+            'message' => 'Profil berhasil diperbarui',
+            'data' => $user
         ], 200);
     }
 
