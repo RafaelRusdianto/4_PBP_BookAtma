@@ -4,6 +4,7 @@ import '../../pages/loading/loading_screen.dart';
 import '../../pages/landing/landing_page.dart';
 import '../../pages/auth/login_page.dart';
 import '../../pages/auth/register_page.dart';
+import '../../pages/auth/experience_settings_page.dart';
 import '../../pages/main_page.dart';
 
 import '../../pages/home/home_page.dart';
@@ -44,6 +45,7 @@ class AppRoutes {
     landing: (context) => const LandingPage(),
     login: (context) => const LoginPage(),
     register: (context) => const RegisterPage(),
+    settings: (context) => const ExperienceSettingsPage(),
 
     main: (context) => const MainPage(),
 
