@@ -59,6 +59,38 @@ class BookingController extends Controller
         ], 200);
     }
 
+    public function active(Request $request)
+    {
+        $booking = Booking::with([
+            'detailBooking.kamar.hotel',
+            'pembayaran'
+        ])
+        ->where('id_user', $request->user()->id_user)
+        ->where('status', '!=', 'selesai')
+        ->get();
+
+        return response()->json([
+            'message' => 'Data pesanan aktif berhasil diambil',
+            'data' => $booking
+        ], 200);
+    }
+
+    public function history(Request $request)
+    {
+        $booking = Booking::with([
+            'detailBooking.kamar.hotel',
+            'pembayaran'
+        ])
+        ->where('id_user', $request->user()->id_user)
+        ->where('status', 'selesai')
+        ->get();
+
+        return response()->json([
+            'message' => 'Riwayat pesanan berhasil diambil',
+            'data' => $booking
+        ], 200);
+    }
+
     public function show($id)
     {
         $booking = Booking::with([
