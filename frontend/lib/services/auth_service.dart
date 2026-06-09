@@ -42,6 +42,11 @@ class AuthService {
           await prefs.setString('nama', nama);
         }
 
+        final idUser = data['user']?['id_user'];
+        if (idUser != null) {
+          await prefs.setInt('id_user', int.tryParse(idUser.toString()) ?? 0);
+        }
+
         return {
           'success': true,
           'message': data['message'] ?? 'Login berhasil',
@@ -123,6 +128,7 @@ class AuthService {
 
     await prefs.remove('token');
     await prefs.remove('nama');
+    await prefs.remove('id_user');
   }
 
   // Nama user yang sedang login. Pakai cache dari login dulu, kalau kosong

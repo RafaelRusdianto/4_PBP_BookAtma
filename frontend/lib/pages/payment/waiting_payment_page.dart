@@ -69,7 +69,7 @@ class _WaitingPaymentPageState extends State<WaitingPaymentPage> {
                           isLoading = true;
                         });
 
-                        bool success = await BookingService.submitBooking();
+                        final result = await BookingService.submitBooking();
 
                         if (!context.mounted) {
                           return;
@@ -79,15 +79,18 @@ class _WaitingPaymentPageState extends State<WaitingPaymentPage> {
                           isLoading = false;
                         });
 
-                        if (success) {
+                        if (result['success'] == true) {
                           Navigator.pushReplacementNamed(
                             context,
                             '/voucher',
                           );
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Booking gagal diproses'),
+                            SnackBar(
+                              content: Text(
+                                result['message']?.toString() ??
+                                    'Booking gagal diproses',
+                              ),
                             ),
                           );
                         }

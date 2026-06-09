@@ -57,16 +57,71 @@ class BookingService {
     currentBooking?.paymentMethod = method;
   }
 
-  static Future<bool> submitBooking() async {
-    // keep previous behavior for local flows
-    await Future.delayed(const Duration(seconds: 1));
-
-    if (currentBooking == null) {
-      return false;
+  static Future<Map<String, dynamic>> submitBooking() async {
+    final booking = currentBooking;
+    if (booking == null) {
+      return {'success': false, 'message': 'Data booking tidak ditemukan'};
     }
 
-    currentBooking!.status = 'Booking Berhasil';
-    return true;
+    // Tanggal wajib ada untuk disimpan ke backend.
+    final checkIn = booking.checkInDate;
+    final checkOut = booking.checkOutDate;
+    if (checkIn == null || checkOut == null) {
+      return {'success': false, 'message': 'Tanggal check-in/check-out belum dipilih'};
+    }
+
+    if (booking.room.idRoom == 0) {
+      return {'success': false, 'message': 'Kamar tidak valid (id_kamar kosong)'};
+    }
+
+    final prefs = await SharedPreferences.getInstance();
+    final idUser = prefs.getInt('id_user');
+    if (idUser == null || idUser == 0) {
+      return {
+        'success': false,
+        'message': 'Sesi tidak valid. Silakan logout lalu login ulang.',
+      };
+    }
+
+    try {
+      final uri = Uri.parse('${ApiConfig.baseUrl}/booking');
+      final res = await http.post(
+        uri,
+        headers: {
+          ...await _authHeaders(),
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          'id_user': idUser,
+          'id_kamar': booking.room.idRoom,
+          'check_in': _formatDate(checkIn),
+          'check_out': _formatDate(checkOut),
+          'total_harga': booking.totalPayment,
+          'harga_per_malam': booking.room.price,
+        }),
+      );
+
+      if (res.statusCode != 200 && res.statusCode != 201) {
+        return {
+          'success': false,
+          'message': 'Gagal menyimpan booking: ${res.statusCode} - ${res.body}',
+        };
+      }
+
+      booking.status = 'Booking Berhasil';
+      return {'success': true, 'message': 'Booking berhasil disimpan'};
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Tidak dapat terhubung ke server: $e',
+      };
+    }
+  }
+
+  static String _formatDate(DateTime date) {
+    final month = date.month.toString().padLeft(2, '0');
+    final day = date.day.toString().padLeft(2, '0');
+    return '${date.year}-$month-$day';
   }
 
   // --- Networked API methods ---

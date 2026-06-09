@@ -169,6 +169,11 @@ class HotelModel {
 
     if (direct != null) return direct;
 
+    // Tangani string desimal seperti "1500000.00" agar tidak salah baca
+    // menjadi 150000000 saat titik/koma dihapus.
+    final asDouble = double.tryParse(text.replaceAll(',', '.'));
+    if (asDouble != null) return asDouble.toInt();
+
     final digits = text.replaceAll(RegExp(r'[^0-9]'), '');
 
     if (digits.isEmpty) return null;
