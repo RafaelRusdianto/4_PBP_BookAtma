@@ -64,10 +64,12 @@ class AuthService {
         'success': false,
         'message': _errorMessage(data, fallback: 'Login Google gagal'),
       };
-    } catch (_) {
+    } catch (e) {
+      // Tampilkan detail error asli supaya mudah didiagnosis.
+      // status 10 / DEVELOPER_ERROR => SHA-1 atau package name di OAuth client salah.
       return {
         'success': false,
-        'message': 'Gagal login dengan Google. Periksa konfigurasi & koneksi.',
+        'message': 'Gagal login Google: $e',
       };
     }
   }
