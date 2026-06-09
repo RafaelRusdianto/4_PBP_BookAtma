@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../../constants/app_colors.dart';
 import '../../models/hotel_model.dart';
 import '../../services/hotel_service.dart';
+import '../../services/auth_service.dart';
 import '../../models/search_filter_model.dart';
 
 class HomePage extends StatefulWidget {
@@ -26,11 +27,19 @@ class _HomePageState extends State<HomePage> {
   DateTime? checkIn;
   DateTime? checkOut;
   int guests = 2;
+  String userName = '';
 
   @override
   void initState() {
     super.initState();
     hotelsFuture = HotelService.fetchHotels(limit: 5);
+    _loadUserName();
+  }
+
+  Future<void> _loadUserName() async {
+    final nama = await AuthService().getUserName();
+    if (!mounted) return;
+    setState(() => userName = nama);
   }
 
   String get locationText {
@@ -362,17 +371,17 @@ class _HomePageState extends State<HomePage> {
                 child: Icon(Icons.person, color: AppColors.primary),
               ),
               const SizedBox(width: 12),
-              const Expanded(
+              Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(
+                    const Text(
                       'WELCOME BACK,',
                       style: TextStyle(color: Colors.white70, fontSize: 10),
                     ),
                     Text(
-                      'Alex Johnson',
-                      style: TextStyle(
+                      userName.isEmpty ? 'Pengguna' : userName,
+                      style: const TextStyle(
                         color: AppColors.white,
                         fontWeight: FontWeight.w800,
                       ),

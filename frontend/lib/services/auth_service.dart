@@ -37,6 +37,11 @@ class AuthService {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('token', token);
 
+        final nama = data['user']?['nama'];
+        if (nama is String && nama.isNotEmpty) {
+          await prefs.setString('nama', nama);
+        }
+
         return {
           'success': true,
           'message': data['message'] ?? 'Login berhasil',
@@ -117,6 +122,40 @@ class AuthService {
     );
 
     await prefs.remove('token');
+    await prefs.remove('nama');
+  }
+
+  // Nama user yang sedang login. Pakai cache dari login dulu, kalau kosong
+  // ambil dari endpoint /profile memakai token.
+  Future<String> getUserName() async {
+    final prefs = await SharedPreferences.getInstance();
+
+    final cached = prefs.getString('nama');
+    if (cached != null && cached.isNotEmpty) return cached;
+
+    final token = prefs.getString('token');
+    if (token == null || token.isEmpty) return '';
+
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/profile'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = _decodeObject(response.body);
+        final nama = data['data']?['nama'];
+        if (nama is String && nama.isNotEmpty) {
+          await prefs.setString('nama', nama);
+          return nama;
+        }
+      }
+    } catch (_) {}
+
+    return '';
   }
 
   Map<String, dynamic> _decodeObject(String responseBody) {
