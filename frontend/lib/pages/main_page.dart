@@ -17,6 +17,7 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   int _selectedIndex = 0;
+  DateTime? _lastBackPressed;
 
   final GlobalKey<SearchPageState> _searchPageKey =
       GlobalKey<SearchPageState>();
