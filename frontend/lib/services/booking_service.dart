@@ -1,6 +1,7 @@
 import 'dart:convert';
 
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 import '../models/booking_model.dart';
 import '../models/hotel_model.dart';
@@ -8,6 +9,17 @@ import '../config/api_config.dart';
 
 class BookingService {
   static BookingModel? currentBooking;
+
+  // Header dengan token Sanctum untuk endpoint yang butuh autentikasi.
+  static Future<Map<String, String>> _authHeaders() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+
+    return {
+      'Accept': 'application/json',
+      if (token != null && token.isNotEmpty) 'Authorization': 'Bearer $token',
+    };
+  }
 
   static void startBooking({
     required HotelModel hotel,
@@ -60,7 +72,7 @@ class BookingService {
   // --- Networked API methods ---
   static Future<List<BookingModel>> getActiveBookings() async {
     final uri = Uri.parse('${ApiConfig.baseUrl}/bookings/active');
-    final res = await http.get(uri);
+    final res = await http.get(uri, headers: await _authHeaders());
 
     if (res.statusCode != 200) {
       throw Exception('Gagal memuat pesanan aktif: ${res.statusCode} - ${res.body}');
@@ -80,7 +92,7 @@ class BookingService {
 
   static Future<List<BookingModel>> getHistoryBookings() async {
     final uri = Uri.parse('${ApiConfig.baseUrl}/bookings/history');
-    final res = await http.get(uri);
+    final res = await http.get(uri, headers: await _authHeaders());
 
     if (res.statusCode != 200) {
       throw Exception('Gagal memuat riwayat pesanan: ${res.statusCode} - ${res.body}');
@@ -100,7 +112,7 @@ class BookingService {
 
   static Future<BookingModel> getBookingDetail(String bookingId) async {
     final uri = Uri.parse('${ApiConfig.baseUrl}/bookings/$bookingId');
-    final res = await http.get(uri);
+    final res = await http.get(uri, headers: await _authHeaders());
 
     if (res.statusCode != 200) {
       throw Exception('Gagal memuat detail pesanan: ${res.statusCode} - ${res.body}');
