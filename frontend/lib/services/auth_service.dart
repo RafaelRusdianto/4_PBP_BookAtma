@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:io';
 
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
@@ -162,6 +163,97 @@ class AuthService {
     } catch (_) {}
 
     return '';
+  }
+
+  // Ambil data user yang sedang login dari endpoint /profile (auth()->user()).
+  // Mengembalikan map berisi nama, email, no_hp, dll. atau null bila gagal.
+  Future<Map<String, dynamic>?> getProfile() async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    if (token == null || token.isEmpty) return null;
+
+    try {
+      final response = await http.get(
+        Uri.parse('${ApiConfig.baseUrl}/profile'),
+        headers: {
+          'Authorization': 'Bearer $token',
+          'Accept': 'application/json',
+        },
+      );
+
+      if (response.statusCode == 200) {
+        final data = _decodeObject(response.body);
+        final user = data['data'];
+        if (user is Map) {
+          return Map<String, dynamic>.from(user);
+        }
+      }
+    } catch (_) {}
+
+    return null;
+  }
+
+  // Perbarui profil user yang sedang login (POST /profile, auth()->user()).
+  // foto opsional; bila ada dikirim sebagai multipart 'foto_profil'.
+  Future<Map<String, dynamic>> updateProfile({
+    required String nama,
+    required String email,
+    required String noHp,
+    File? foto,
+  }) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    if (token == null || token.isEmpty) {
+      return {
+        'success': false,
+        'message': 'Sesi tidak valid. Silakan login ulang.',
+      };
+    }
+
+    try {
+      final uri = Uri.parse('${ApiConfig.baseUrl}/profile');
+      final request = http.MultipartRequest('POST', uri);
+      request.headers['Authorization'] = 'Bearer $token';
+      request.headers['Accept'] = 'application/json';
+      request.fields['nama'] = nama;
+      request.fields['email'] = email;
+      request.fields['no_hp'] = noHp;
+
+      if (foto != null) {
+        request.files.add(
+          await http.MultipartFile.fromPath('foto_profil', foto.path),
+        );
+      }
+
+      final streamed = await request.send();
+      final response = await http.Response.fromStream(streamed);
+      final data = _decodeObject(response.body);
+
+      if (response.statusCode == 200) {
+        final user = data['data'];
+        if (user is Map) {
+          final newNama = user['nama'];
+          if (newNama is String && newNama.isNotEmpty) {
+            await prefs.setString('nama', newNama);
+          }
+        }
+        return {
+          'success': true,
+          'message': data['message'] ?? 'Profil berhasil diperbarui',
+          'data': user,
+        };
+      }
+
+      return {
+        'success': false,
+        'message': _errorMessage(data, fallback: 'Gagal memperbarui profil'),
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Tidak dapat terhubung ke server: $e',
+      };
+    }
   }
 
   Map<String, dynamic> _decodeObject(String responseBody) {

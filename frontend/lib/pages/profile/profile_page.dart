@@ -3,8 +3,10 @@ import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 
+import '../../config/api_config.dart';
 import '../../core/routes/app_routes.dart';
 import '../../core/theme/app_colors.dart';
+import '../../services/auth_service.dart';
 import '../../widgets/primary_button.dart';
 import '../../widgets/setting_tile.dart';
 
@@ -16,13 +18,48 @@ class ProfilePage extends StatefulWidget {
 }
 
 class _ProfilePageState extends State<ProfilePage> {
-  final _nameController = TextEditingController(text: 'Alex Johnson');
-  final _emailController = TextEditingController(text: 'johndoe@example.com');
-  final _phoneController = TextEditingController(text: '+62 81234567890');
+  final _nameController = TextEditingController();
+  final _emailController = TextEditingController();
+  final _phoneController = TextEditingController();
   final _formKey = GlobalKey<FormState>();
   final ImagePicker _picker = ImagePicker();
   File? _avatarFile;
+  String? _avatarUrl;
   bool _isSaving = false;
+  bool _isLoading = true;
+
+  @override
+  void initState() {
+    super.initState();
+    _loadProfile();
+  }
+
+  // Ambil data user yang sedang login (auth()->user()) dari backend.
+  Future<void> _loadProfile() async {
+    final user = await AuthService().getProfile();
+    if (!mounted) return;
+
+    setState(() {
+      if (user != null) {
+        _nameController.text = (user['nama'] ?? '').toString();
+        _emailController.text = (user['email'] ?? '').toString();
+        _phoneController.text = (user['no_hp'] ?? '').toString();
+        _avatarUrl = _resolveFotoUrl(user['foto_profil']);
+      }
+      _isLoading = false;
+    });
+  }
+
+  // Ubah path foto_profil dari backend menjadi URL lengkap yang bisa diakses.
+  String? _resolveFotoUrl(dynamic foto) {
+    final path = foto?.toString().trim();
+    if (path == null || path.isEmpty) return null;
+    if (path.startsWith('http')) return path;
+
+    final host = ApiConfig.baseUrl.replaceAll('/api', '');
+    final clean = path.startsWith('/') ? path.substring(1) : path;
+    return '$host/storage/$clean';
+  }
 
   @override
   void dispose() {
@@ -279,9 +316,11 @@ void _showPhotoOptions() {
                       borderRadius: BorderRadius.circular(14),
                     ),
                   ),
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    Navigator.of(context).pushNamedAndRemoveUntil(
+                  onPressed: () async {
+                    final navigator = Navigator.of(context);
+                    navigator.pop();
+                    await AuthService().logout();
+                    navigator.pushNamedAndRemoveUntil(
                       AppRoutes.landing,
                       (route) => false,
                     );
@@ -325,28 +364,68 @@ void _showPhotoOptions() {
     if (!(_formKey.currentState?.validate() ?? false)) return;
 
     setState(() => _isSaving = true);
-    await Future.delayed(const Duration(milliseconds: 600));
+
+    final result = await AuthService().updateProfile(
+      nama: _nameController.text.trim(),
+      email: _emailController.text.trim(),
+      noHp: _phoneController.text.trim(),
+      foto: _avatarFile,
+    );
+
     if (!mounted) return;
-    setState(() => _isSaving = false);
+
+    setState(() {
+      _isSaving = false;
+      if (result['success'] == true && result['data'] is Map) {
+        // Pakai foto terbaru dari server, hentikan preview file lokal.
+        _avatarUrl = _resolveFotoUrl(result['data']['foto_profil']);
+        _avatarFile = null;
+      }
+    });
 
     ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Perubahan profil telah disimpan.')),
+      SnackBar(
+        content: Text(
+          result['message']?.toString() ?? 'Perubahan profil telah disimpan.',
+        ),
+      ),
     );
   }
 
   @override
   Widget build(BuildContext context) {
-    final avatar = _avatarFile != null
-        ? ClipOval(child: Image.file(_avatarFile!, width: 110, height: 110, fit: BoxFit.cover))
-        : const CircleAvatar(
+    final Widget avatar;
+    if (_avatarFile != null) {
+      avatar = ClipOval(
+        child: Image.file(_avatarFile!, width: 110, height: 110, fit: BoxFit.cover),
+      );
+    } else if (_avatarUrl != null) {
+      avatar = ClipOval(
+        child: Image.network(
+          _avatarUrl!,
+          width: 110,
+          height: 110,
+          fit: BoxFit.cover,
+          errorBuilder: (_, _, _) => const CircleAvatar(
             radius: 55,
             backgroundColor: AppColors.softBlue,
             child: Icon(Icons.person, size: 52, color: AppColors.primary),
-          );
+          ),
+        ),
+      );
+    } else {
+      avatar = const CircleAvatar(
+        radius: 55,
+        backgroundColor: AppColors.softBlue,
+        child: Icon(Icons.person, size: 52, color: AppColors.primary),
+      );
+    }
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: SafeArea(
+      body: _isLoading
+          ? const Center(child: CircularProgressIndicator())
+          : SafeArea(
         child: SingleChildScrollView(
           padding: const EdgeInsets.only(bottom: 24),
           child: Column(
