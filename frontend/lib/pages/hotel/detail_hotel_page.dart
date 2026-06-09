@@ -3,7 +3,15 @@ import 'package:flutter/material.dart';
 import '../../constants/app_colors.dart';
 import '../../core/format_helper.dart';
 import '../../models/hotel_model.dart';
+import '../../models/search_filter_model.dart';
 import '../../services/booking_service.dart';
+
+class DetailHotelPageArguments {
+  final HotelModel hotel;
+  final SearchFilterModel? searchFilter;
+
+  const DetailHotelPageArguments({required this.hotel, this.searchFilter});
+}
 
 class DetailHotelPage extends StatefulWidget {
   const DetailHotelPage({super.key});
@@ -18,8 +26,21 @@ class _DetailHotelPageState extends State<DetailHotelPage> {
   @override
   Widget build(BuildContext context) {
     final args = ModalRoute.of(context)?.settings.arguments;
+    final HotelModel? hotel;
+    final SearchFilterModel? searchFilter;
 
-    if (args is! HotelModel) {
+    if (args is DetailHotelPageArguments) {
+      hotel = args.hotel;
+      searchFilter = args.searchFilter;
+    } else if (args is HotelModel) {
+      hotel = args;
+      searchFilter = null;
+    } else {
+      hotel = null;
+      searchFilter = null;
+    }
+
+    if (hotel == null) {
       return Scaffold(
         backgroundColor: AppColors.background,
         appBar: AppBar(title: const Text('Detail Hotel')),
@@ -27,7 +48,9 @@ class _DetailHotelPageState extends State<DetailHotelPage> {
       );
     }
 
-    final HotelModel hotel = args;
+    final selectedHotel = hotel;
+    final selectedCheckIn = searchFilter?.checkIn;
+    final selectedCheckOut = searchFilter?.checkOut;
 
     double imageHeight = MediaQuery.of(context).size.height * 0.36;
 
@@ -43,7 +66,7 @@ class _DetailHotelPageState extends State<DetailHotelPage> {
                 child: Stack(
                   children: [
                     PageView.builder(
-                      itemCount: hotel.imageUrls.length,
+                      itemCount: selectedHotel.imageUrls.length,
                       onPageChanged: (index) {
                         setState(() {
                           currentImage = index;
@@ -51,7 +74,7 @@ class _DetailHotelPageState extends State<DetailHotelPage> {
                       },
                       itemBuilder: (context, index) {
                         return Image.network(
-                          hotel.imageUrls[index],
+                          selectedHotel.imageUrls[index],
                           width: double.infinity,
                           fit: BoxFit.cover,
                         );
@@ -88,7 +111,7 @@ class _DetailHotelPageState extends State<DetailHotelPage> {
                       child: Row(
                         mainAxisAlignment: MainAxisAlignment.center,
                         children: List.generate(
-                          hotel.imageUrls.length,
+                          selectedHotel.imageUrls.length,
                           (index) => Container(
                             width: currentImage == index ? 18 : 8,
                             height: 8,
@@ -122,7 +145,7 @@ class _DetailHotelPageState extends State<DetailHotelPage> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        hotel.name,
+                        selectedHotel.name,
                         style: const TextStyle(
                           fontSize: 21,
                           fontWeight: FontWeight.w800,
@@ -160,7 +183,7 @@ class _DetailHotelPageState extends State<DetailHotelPage> {
                           ),
                           const SizedBox(width: 6),
                           Text(
-                            '(${hotel.rating}/5)',
+                            '(${selectedHotel.rating}/5)',
                             style: const TextStyle(
                               color: AppColors.textDisabled,
                               fontSize: 12,
@@ -181,7 +204,7 @@ class _DetailHotelPageState extends State<DetailHotelPage> {
                           const SizedBox(width: 4),
                           Expanded(
                             child: Text(
-                              hotel.location,
+                              selectedHotel.location,
                               style: const TextStyle(
                                 color: AppColors.textDisabled,
                                 fontSize: 12,
@@ -196,7 +219,7 @@ class _DetailHotelPageState extends State<DetailHotelPage> {
                       Wrap(
                         spacing: 10,
                         runSpacing: 10,
-                        children: hotel.facilities.map((facility) {
+                        children: selectedHotel.facilities.map((facility) {
                           IconData icon = Icons.check_circle_outline;
 
                           if (facility.toLowerCase().contains('wifi')) {
@@ -207,10 +230,7 @@ class _DetailHotelPageState extends State<DetailHotelPage> {
                             icon = Icons.fitness_center;
                           }
 
-                          return _FacilityChip(
-                            icon: icon,
-                            text: facility,
-                          );
+                          return _FacilityChip(icon: icon, text: facility);
                         }).toList(),
                       ),
 
@@ -274,9 +294,9 @@ class _DetailHotelPageState extends State<DetailHotelPage> {
                       ListView.builder(
                         shrinkWrap: true,
                         physics: const NeverScrollableScrollPhysics(),
-                        itemCount: hotel.rooms.length,
+                        itemCount: selectedHotel.rooms.length,
                         itemBuilder: (context, index) {
-                          final room = hotel.rooms[index];
+                          final room = selectedHotel.rooms[index];
 
                           return Padding(
                             padding: const EdgeInsets.only(bottom: 14),
@@ -284,14 +304,25 @@ class _DetailHotelPageState extends State<DetailHotelPage> {
                               room: room,
                               onPressed: () {
                                 BookingService.startBooking(
-                                  hotel: hotel,
+                                  hotel: selectedHotel,
                                   room: room,
                                 );
 
-                                Navigator.pushNamed(
-                                  context,
-                                  '/choose-date',
-                                );
+                                if (selectedCheckIn != null &&
+                                    selectedCheckOut != null) {
+                                  BookingService.setDates(
+                                    checkIn: selectedCheckIn,
+                                    checkOut: selectedCheckOut,
+                                  );
+
+                                  Navigator.pushNamed(
+                                    context,
+                                    '/request-booking',
+                                  );
+                                  return;
+                                }
+
+                                Navigator.pushNamed(context, '/choose-date');
                               },
                             ),
                           );
@@ -313,10 +344,7 @@ class _FacilityChip extends StatelessWidget {
   final IconData icon;
   final String text;
 
-  const _FacilityChip({
-    required this.icon,
-    required this.text,
-  });
+  const _FacilityChip({required this.icon, required this.text});
 
   @override
   Widget build(BuildContext context) {
@@ -336,10 +364,7 @@ class _FacilityChip extends StatelessWidget {
             child: Text(
               text,
               overflow: TextOverflow.ellipsis,
-              style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w700,
-              ),
+              style: const TextStyle(fontSize: 11, fontWeight: FontWeight.w700),
             ),
           ),
         ],
@@ -352,10 +377,7 @@ class _ReviewCard extends StatelessWidget {
   final String name;
   final String text;
 
-  const _ReviewCard({
-    required this.name,
-    required this.text,
-  });
+  const _ReviewCard({required this.name, required this.text});
 
   @override
   Widget build(BuildContext context) {
@@ -408,10 +430,7 @@ class _RoomCard extends StatelessWidget {
   final RoomModel room;
   final VoidCallback onPressed;
 
-  const _RoomCard({
-    required this.room,
-    required this.onPressed,
-  });
+  const _RoomCard({required this.room, required this.onPressed});
 
   @override
   Widget build(BuildContext context) {
@@ -544,10 +563,7 @@ class _SmallRoomInfo extends StatelessWidget {
   final IconData icon;
   final String text;
 
-  const _SmallRoomInfo({
-    required this.icon,
-    required this.text,
-  });
+  const _SmallRoomInfo({required this.icon, required this.text});
 
   @override
   Widget build(BuildContext context) {
@@ -558,10 +574,7 @@ class _SmallRoomInfo extends StatelessWidget {
         const SizedBox(width: 3),
         Text(
           text,
-          style: const TextStyle(
-            fontSize: 10,
-            color: AppColors.textDisabled,
-          ),
+          style: const TextStyle(fontSize: 10, color: AppColors.textDisabled),
         ),
       ],
     );

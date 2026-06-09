@@ -6,45 +6,29 @@ import '../../constants/app_colors.dart';
 import '../../models/hotel_model.dart';
 import '../../models/search_filter_model.dart';
 import '../../services/search_service.dart';
+import '../hotel/detail_hotel_page.dart';
 
 class SearchPage extends StatefulWidget {
-  final SearchFilterModel? initialFilter;
-
-  const SearchPage({
-    super.key,
-    this.initialFilter,
-  });
+  const SearchPage({super.key});
 
   @override
-  State<SearchPage> createState() => _SearchPageState();
+  SearchPageState createState() => SearchPageState();
 }
 
-class _SearchPageState extends State<SearchPage> {
+class SearchPageState extends State<SearchPage> {
   SearchFilterModel filter = const SearchFilterModel();
   Future<List<HotelModel>>? searchFuture;
+
   bool hasSearched = false;
   bool loadingLocation = false;
 
-  @override
-  void initState() {
-    super.initState();
-
-    if (widget.initialFilter != null) {
-      _runSearch(widget.initialFilter!);
-    }
-  }
-
-  @override
-  void didUpdateWidget(covariant SearchPage oldWidget) {
-    super.didUpdateWidget(oldWidget);
-
-    if (widget.initialFilter != null &&
-        widget.initialFilter != oldWidget.initialFilter) {
-      _runSearch(widget.initialFilter!);
-    }
+  void searchFromExternalFilter(SearchFilterModel newFilter) {
+    _runSearch(newFilter);
   }
 
   void _runSearch(SearchFilterModel newFilter) {
+    if (!mounted) return;
+
     setState(() {
       filter = newFilter;
       hasSearched = true;
@@ -61,222 +45,26 @@ class _SearchPageState extends State<SearchPage> {
   }
 
   Future<void> _openSearchSheet() async {
-    final keywordController = TextEditingController(text: filter.keyword);
-    DateTime? tempCheckIn = filter.checkIn;
-    DateTime? tempCheckOut = filter.checkOut;
-    int tempGuests = filter.guests;
-
-    await showModalBottomSheet(
+    final newFilter = await showModalBottomSheet<SearchFilterModel>(
       context: context,
       isScrollControlled: true,
       backgroundColor: Colors.transparent,
-      builder: (context) {
-        return StatefulBuilder(
-          builder: (context, setModalState) {
-            return Container(
-              padding: EdgeInsets.only(
-                left: 24,
-                right: 24,
-                top: 22,
-                bottom: MediaQuery.of(context).viewInsets.bottom + 24,
-              ),
-              decoration: const BoxDecoration(
-                color: AppColors.white,
-                borderRadius: BorderRadius.vertical(
-                  top: Radius.circular(28),
-                ),
-              ),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      const Text(
-                        'Cari Hotel',
-                        style: TextStyle(
-                          color: AppColors.black,
-                          fontSize: 20,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                      const Spacer(),
-                      IconButton(
-                        onPressed: () => Navigator.pop(context),
-                        icon: const Icon(Icons.close),
-                      ),
-                    ],
-                  ),
-
-                  const SizedBox(height: 18),
-
-                  TextField(
-                    controller: keywordController,
-                    decoration: InputDecoration(
-                      hintText: 'Masukkan nama kota atau hotel',
-                      prefixIcon: const Icon(Icons.search),
-                      filled: true,
-                      fillColor: const Color(0xFFF1F3FF),
-                      border: OutlineInputBorder(
-                        borderRadius: BorderRadius.circular(24),
-                        borderSide: BorderSide.none,
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 16),
-
-                  InkWell(
-                    borderRadius: BorderRadius.circular(18),
-                    onTap: () async {
-                      final picked = await showDateRangePicker(
-                        context: context,
-                        firstDate: DateTime.now(),
-                        lastDate: DateTime(DateTime.now().year + 2),
-                        initialDateRange:
-                            tempCheckIn != null && tempCheckOut != null
-                                ? DateTimeRange(
-                                    start: tempCheckIn!,
-                                    end: tempCheckOut!,
-                                  )
-                                : null,
-                      );
-
-                      if (picked != null) {
-                        setModalState(() {
-                          tempCheckIn = picked.start;
-                          tempCheckOut = picked.end;
-                        });
-                      }
-                    },
-                    child: Container(
-                      width: double.infinity,
-                      padding: const EdgeInsets.all(16),
-                      decoration: BoxDecoration(
-                        color: const Color(0xFFF8FAFC),
-                        borderRadius: BorderRadius.circular(18),
-                        border: Border.all(color: AppColors.borderInput),
-                      ),
-                      child: Row(
-                        children: [
-                          const Icon(
-                            Icons.calendar_month_outlined,
-                            color: AppColors.primary,
-                          ),
-                          const SizedBox(width: 12),
-                          Expanded(
-                            child: Text(
-                              SearchFilterModel(
-                                checkIn: tempCheckIn,
-                                checkOut: tempCheckOut,
-                              ).dateText,
-                              style: const TextStyle(
-                                color: AppColors.black,
-                                fontWeight: FontWeight.w800,
-                              ),
-                            ),
-                          ),
-                        ],
-                      ),
-                    ),
-                  ),
-
-                  const SizedBox(height: 18),
-
-                  Container(
-                    padding: const EdgeInsets.all(16),
-                    decoration: BoxDecoration(
-                      color: const Color(0xFFF8FAFC),
-                      borderRadius: BorderRadius.circular(18),
-                      border: Border.all(color: AppColors.borderInput),
-                    ),
-                    child: Row(
-                      children: [
-                        const Expanded(
-                          child: Text(
-                            'Jumlah Tamu',
-                            style: TextStyle(
-                              color: AppColors.black,
-                              fontSize: 15,
-                              fontWeight: FontWeight.w900,
-                            ),
-                          ),
-                        ),
-                        _CounterButton(
-                          icon: Icons.remove,
-                          onTap: () {
-                            if (tempGuests > 1) {
-                              setModalState(() {
-                                tempGuests--;
-                              });
-                            }
-                          },
-                        ),
-                        const SizedBox(width: 16),
-                        Text(
-                          '$tempGuests',
-                          style: const TextStyle(
-                            color: AppColors.black,
-                            fontSize: 18,
-                            fontWeight: FontWeight.w900,
-                          ),
-                        ),
-                        const SizedBox(width: 16),
-                        _CounterButton(
-                          icon: Icons.add,
-                          active: true,
-                          onTap: () {
-                            setModalState(() {
-                              tempGuests++;
-                            });
-                          },
-                        ),
-                      ],
-                    ),
-                  ),
-
-                  const SizedBox(height: 22),
-
-                  SizedBox(
-                    width: double.infinity,
-                    height: 54,
-                    child: ElevatedButton(
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primary,
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(24),
-                        ),
-                        elevation: 8,
-                      ),
-                      onPressed: () {
-                        final newFilter = SearchFilterModel(
-                          keyword: keywordController.text.trim(),
-                          checkIn: tempCheckIn,
-                          checkOut: tempCheckOut,
-                          guests: tempGuests,
-                        );
-
-                        Navigator.pop(context);
-                        _runSearch(newFilter);
-                      },
-                      child: const Text(
-                        'Search',
-                        style: TextStyle(
-                          color: AppColors.white,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            );
-          },
+      builder: (_) {
+        return _SearchFilterSheet(
+          initialKeyword: filter.keyword,
+          initialCheckIn: filter.checkIn,
+          initialCheckOut: filter.checkOut,
+          initialGuests: filter.guests,
         );
       },
     );
 
-    keywordController.dispose();
+    if (!mounted || newFilter == null) return;
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+      _runSearch(newFilter);
+    });
   }
 
   Future<void> _useCurrentLocation() async {
@@ -328,11 +116,11 @@ class _SearchPageState extends State<SearchPage> {
       );
 
       _runSearch(newFilter);
-    } catch (e) {
+    } catch (_) {
       if (!mounted) return;
 
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
+        const SnackBar(
           content: Text(
             'Lokasi belum bisa diambil. Untuk sementara memakai Jakarta.',
           ),
@@ -350,22 +138,23 @@ class _SearchPageState extends State<SearchPage> {
         ),
       );
     } finally {
-      if (mounted) {
-        setState(() {
-          loadingLocation = false;
-        });
-      }
+      if (!mounted) return;
+
+      setState(() {
+        loadingLocation = false;
+      });
     }
   }
 
   String _cleanProvinceName(String value) {
     final text = value.trim();
+    final lower = text.toLowerCase();
 
-    if (text.toLowerCase().contains('jakarta')) return 'Jakarta';
-    if (text.toLowerCase().contains('yogyakarta')) return 'Yogyakarta';
-    if (text.toLowerCase().contains('jawa tengah')) return 'Semarang';
-    if (text.toLowerCase().contains('jawa barat')) return 'Bandung';
-    if (text.toLowerCase().contains('bali')) return 'Bali';
+    if (lower.contains('jakarta')) return 'Jakarta';
+    if (lower.contains('yogyakarta')) return 'Yogyakarta';
+    if (lower.contains('jawa tengah')) return 'Semarang';
+    if (lower.contains('jawa barat')) return 'Bandung';
+    if (lower.contains('bali')) return 'Bali';
 
     return text;
   }
@@ -412,7 +201,9 @@ class _SearchPageState extends State<SearchPage> {
                             color: AppColors.white,
                           ),
                         ),
+
                         const SizedBox(width: 14),
+
                         Expanded(
                           child: Text(
                             loadingLocation
@@ -448,39 +239,77 @@ class _SearchPageState extends State<SearchPage> {
                   title: 'Jakarta',
                   subtitle: 'DKI Jakarta, Indonesia',
                   onTap: () {
-                    _runSearch(
-                      const SearchFilterModel(keyword: 'Jakarta'),
-                    );
+                    _runSearch(const SearchFilterModel(keyword: 'Jakarta'));
                   },
                 ),
+
                 _DestinationItem(
                   title: 'Bali',
                   subtitle: 'Provinsi Bali, Indonesia',
                   onTap: () {
-                    _runSearch(
-                      const SearchFilterModel(keyword: 'Bali'),
-                    );
+                    _runSearch(const SearchFilterModel(keyword: 'Bali'));
                   },
                 ),
+
                 _DestinationItem(
                   title: 'Bandung',
                   subtitle: 'Jawa Barat, Indonesia',
                   onTap: () {
-                    _runSearch(
-                      const SearchFilterModel(keyword: 'Bandung'),
-                    );
+                    _runSearch(const SearchFilterModel(keyword: 'Bandung'));
                   },
                 ),
+
                 _DestinationItem(
                   title: 'Yogyakarta',
                   subtitle: 'DI Yogyakarta, Indonesia',
                   onTap: () {
-                    _runSearch(
-                      const SearchFilterModel(keyword: 'Yogyakarta'),
-                    );
+                    _runSearch(const SearchFilterModel(keyword: 'Yogyakarta'));
                   },
                 ),
 
+                const SizedBox(height: 28),
+
+                Row(
+                  children: [
+                    const Text(
+                      'TERAKHIR DICARI',
+                      style: TextStyle(
+                        color: AppColors.placeholder,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w900,
+                        letterSpacing: 0.4,
+                      ),
+                    ),
+
+                    const Spacer(),
+
+                    TextButton(
+                      onPressed: _resetSearch,
+                      child: const Text(
+                        'Hapus Semua',
+                        style: TextStyle(
+                          color: AppColors.primary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+
+                const SizedBox(height: 8),
+
+                _RecentSearchItem(
+                  title: 'The Ritz-Carlton Jakarta',
+                  subtitle: 'Hotel • Jakarta',
+                  onTap: () {
+                    _runSearch(
+                      const SearchFilterModel(
+                        keyword: 'The Ritz-Carlton Jakarta',
+                      ),
+                    );
+                  },
+                ),
               ],
             ),
           ),
@@ -493,9 +322,7 @@ class _SearchPageState extends State<SearchPage> {
     return Container(
       width: double.infinity,
       padding: const EdgeInsets.fromLTRB(24, 48, 24, 20),
-      decoration: const BoxDecoration(
-        color: AppColors.primary,
-      ),
+      decoration: const BoxDecoration(color: AppColors.primary),
       child: Row(
         children: [
           Expanded(
@@ -508,18 +335,14 @@ class _SearchPageState extends State<SearchPage> {
                 decoration: BoxDecoration(
                   color: AppColors.white,
                   borderRadius: BorderRadius.circular(26),
-                  border: Border.all(
-                    color: AppColors.accent,
-                    width: 1.4,
-                  ),
+                  border: Border.all(color: AppColors.accent, width: 1.4),
                 ),
                 child: const Row(
                   children: [
-                    Icon(
-                      Icons.search,
-                      color: AppColors.placeholder,
-                    ),
+                    Icon(Icons.search, color: AppColors.placeholder),
+
                     SizedBox(width: 8),
+
                     Expanded(
                       child: Text(
                         'Mau kemana?',
@@ -566,9 +389,7 @@ class _SearchPageState extends State<SearchPage> {
             builder: (context, snapshot) {
               if (snapshot.connectionState == ConnectionState.waiting) {
                 return const Center(
-                  child: CircularProgressIndicator(
-                    color: AppColors.primary,
-                  ),
+                  child: CircularProgressIndicator(color: AppColors.primary),
                 );
               }
 
@@ -608,6 +429,7 @@ class _SearchPageState extends State<SearchPage> {
                 itemBuilder: (context, index) {
                   return _SearchResultCard(
                     hotel: hotels[index],
+                    filter: filter,
                     guestCount: filter.guests,
                   );
                 },
@@ -633,9 +455,7 @@ class _SearchPageState extends State<SearchPage> {
       padding: const EdgeInsets.fromLTRB(24, 48, 24, 22),
       decoration: const BoxDecoration(
         color: AppColors.primary,
-        borderRadius: BorderRadius.vertical(
-          bottom: Radius.circular(28),
-        ),
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
       ),
       child: Row(
         children: [
@@ -645,10 +465,7 @@ class _SearchPageState extends State<SearchPage> {
             child: CircleAvatar(
               radius: 22,
               backgroundColor: Colors.white.withOpacity(0.18),
-              child: const Icon(
-                Icons.arrow_back,
-                color: AppColors.white,
-              ),
+              child: const Icon(Icons.arrow_back, color: AppColors.white),
             ),
           ),
 
@@ -666,9 +483,7 @@ class _SearchPageState extends State<SearchPage> {
                 decoration: BoxDecoration(
                   color: Colors.white.withOpacity(0.16),
                   borderRadius: BorderRadius.circular(24),
-                  border: Border.all(
-                    color: Colors.white.withOpacity(0.25),
-                  ),
+                  border: Border.all(color: Colors.white.withOpacity(0.25)),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -681,7 +496,9 @@ class _SearchPageState extends State<SearchPage> {
                         fontWeight: FontWeight.w700,
                       ),
                     ),
+
                     const SizedBox(height: 4),
+
                     Text(
                       filter.summaryText,
                       maxLines: 1,
@@ -698,6 +515,258 @@ class _SearchPageState extends State<SearchPage> {
             ),
           ),
         ],
+      ),
+    );
+  }
+}
+
+class _SearchFilterSheet extends StatefulWidget {
+  final String initialKeyword;
+  final DateTime? initialCheckIn;
+  final DateTime? initialCheckOut;
+  final int initialGuests;
+
+  const _SearchFilterSheet({
+    required this.initialKeyword,
+    required this.initialCheckIn,
+    required this.initialCheckOut,
+    required this.initialGuests,
+  });
+
+  @override
+  State<_SearchFilterSheet> createState() => _SearchFilterSheetState();
+}
+
+class _SearchFilterSheetState extends State<_SearchFilterSheet> {
+  late final TextEditingController keywordController;
+
+  DateTime? tempCheckIn;
+  DateTime? tempCheckOut;
+  late int tempGuests;
+
+  @override
+  void initState() {
+    super.initState();
+
+    keywordController = TextEditingController(text: widget.initialKeyword);
+
+    tempCheckIn = widget.initialCheckIn;
+    tempCheckOut = widget.initialCheckOut;
+    tempGuests = widget.initialGuests;
+  }
+
+  @override
+  void dispose() {
+    keywordController.dispose();
+    super.dispose();
+  }
+
+  Future<void> _pickDateRange() async {
+    final picked = await showDateRangePicker(
+      context: context,
+      firstDate: DateTime.now(),
+      lastDate: DateTime(DateTime.now().year + 2),
+      initialDateRange: tempCheckIn != null && tempCheckOut != null
+          ? DateTimeRange(start: tempCheckIn!, end: tempCheckOut!)
+          : null,
+    );
+
+    if (!mounted || picked == null) return;
+
+    setState(() {
+      tempCheckIn = picked.start;
+      tempCheckOut = picked.end;
+    });
+  }
+
+  void _submit() {
+    final newFilter = SearchFilterModel(
+      keyword: keywordController.text.trim(),
+      checkIn: tempCheckIn,
+      checkOut: tempCheckOut,
+      guests: tempGuests,
+    );
+
+    Navigator.of(context).pop(newFilter);
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: EdgeInsets.only(
+        left: 24,
+        right: 24,
+        top: 22,
+        bottom: MediaQuery.of(context).viewInsets.bottom + 24,
+      ),
+      decoration: const BoxDecoration(
+        color: AppColors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(28)),
+      ),
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                const Text(
+                  'Cari Hotel',
+                  style: TextStyle(
+                    color: AppColors.black,
+                    fontSize: 20,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+
+                const Spacer(),
+
+                IconButton(
+                  onPressed: () => Navigator.of(context).pop(),
+                  icon: const Icon(Icons.close),
+                ),
+              ],
+            ),
+
+            const SizedBox(height: 18),
+
+            TextField(
+              controller: keywordController,
+              decoration: InputDecoration(
+                hintText: 'Masukkan nama kota atau hotel',
+                prefixIcon: const Icon(Icons.search),
+                filled: true,
+                fillColor: const Color(0xFFF1F3FF),
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(24),
+                  borderSide: BorderSide.none,
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 16),
+
+            InkWell(
+              borderRadius: BorderRadius.circular(18),
+              onTap: _pickDateRange,
+              child: Container(
+                width: double.infinity,
+                padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFF8FAFC),
+                  borderRadius: BorderRadius.circular(18),
+                  border: Border.all(color: AppColors.borderInput),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(
+                      Icons.calendar_month_outlined,
+                      color: AppColors.primary,
+                    ),
+
+                    const SizedBox(width: 12),
+
+                    Expanded(
+                      child: Text(
+                        SearchFilterModel(
+                          checkIn: tempCheckIn,
+                          checkOut: tempCheckOut,
+                        ).dateText,
+                        style: const TextStyle(
+                          color: AppColors.black,
+                          fontWeight: FontWeight.w800,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            const SizedBox(height: 18),
+
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: const Color(0xFFF8FAFC),
+                borderRadius: BorderRadius.circular(18),
+                border: Border.all(color: AppColors.borderInput),
+              ),
+              child: Row(
+                children: [
+                  const Expanded(
+                    child: Text(
+                      'Jumlah Tamu',
+                      style: TextStyle(
+                        color: AppColors.black,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w900,
+                      ),
+                    ),
+                  ),
+
+                  _CounterButton(
+                    icon: Icons.remove,
+                    onTap: () {
+                      if (tempGuests <= 1) return;
+
+                      setState(() {
+                        tempGuests--;
+                      });
+                    },
+                  ),
+
+                  const SizedBox(width: 16),
+
+                  Text(
+                    '$tempGuests',
+                    style: const TextStyle(
+                      color: AppColors.black,
+                      fontSize: 18,
+                      fontWeight: FontWeight.w900,
+                    ),
+                  ),
+
+                  const SizedBox(width: 16),
+
+                  _CounterButton(
+                    icon: Icons.add,
+                    active: true,
+                    onTap: () {
+                      setState(() {
+                        tempGuests++;
+                      });
+                    },
+                  ),
+                ],
+              ),
+            ),
+
+            const SizedBox(height: 22),
+
+            SizedBox(
+              width: double.infinity,
+              height: 54,
+              child: ElevatedButton(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(24),
+                  ),
+                  elevation: 8,
+                ),
+                onPressed: _submit,
+                child: const Text(
+                  'Search',
+                  style: TextStyle(
+                    color: AppColors.white,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+              ),
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -735,16 +804,14 @@ class _DestinationItem extends StatelessWidget {
                 color: Color(0xFF64748B),
               ),
             ),
+
             const SizedBox(width: 14),
+
             Expanded(
               child: Container(
                 padding: const EdgeInsets.only(bottom: 12),
                 decoration: const BoxDecoration(
-                  border: Border(
-                    bottom: BorderSide(
-                      color: Color(0xFFE2E8F0),
-                    ),
-                  ),
+                  border: Border(bottom: BorderSide(color: Color(0xFFE2E8F0))),
                 ),
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
@@ -757,7 +824,9 @@ class _DestinationItem extends StatelessWidget {
                         fontWeight: FontWeight.w900,
                       ),
                     ),
+
                     const SizedBox(height: 3),
+
                     Text(
                       subtitle,
                       style: const TextStyle(
@@ -776,12 +845,76 @@ class _DestinationItem extends StatelessWidget {
   }
 }
 
+class _RecentSearchItem extends StatelessWidget {
+  final String title;
+  final String subtitle;
+  final VoidCallback onTap;
+
+  const _RecentSearchItem({
+    required this.title,
+    required this.subtitle,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return InkWell(
+      borderRadius: BorderRadius.circular(16),
+      onTap: onTap,
+      child: Row(
+        children: [
+          Container(
+            width: 38,
+            height: 38,
+            decoration: BoxDecoration(
+              color: const Color(0xFFF1F5F9),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: const Icon(Icons.history, color: Color(0xFF64748B)),
+          ),
+
+          const SizedBox(width: 14),
+
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  title,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppColors.black,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w900,
+                  ),
+                ),
+
+                const SizedBox(height: 3),
+
+                Text(
+                  subtitle,
+                  style: const TextStyle(
+                    color: AppColors.placeholder,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
 class _SearchResultCard extends StatelessWidget {
   final HotelModel hotel;
+  final SearchFilterModel filter;
   final int guestCount;
 
   const _SearchResultCard({
     required this.hotel,
+    required this.filter,
     required this.guestCount,
   });
 
@@ -802,7 +935,10 @@ class _SearchResultCard extends StatelessWidget {
         Navigator.pushNamed(
           context,
           '/hotel-detail',
-          arguments: hotel,
+          arguments: DetailHotelPageArguments(
+            hotel: hotel,
+            searchFilter: filter,
+          ),
         );
       },
       child: Container(
@@ -884,6 +1020,7 @@ class _SearchResultCard extends StatelessWidget {
                           ),
                         ),
                       ),
+
                       Container(
                         padding: const EdgeInsets.symmetric(
                           horizontal: 9,
@@ -900,7 +1037,9 @@ class _SearchResultCard extends StatelessWidget {
                               color: AppColors.accent,
                               size: 16,
                             ),
+
                             const SizedBox(width: 4),
+
                             Text(
                               hotel.rating.toStringAsFixed(1),
                               style: const TextStyle(
@@ -923,7 +1062,9 @@ class _SearchResultCard extends StatelessWidget {
                         color: AppColors.placeholder,
                         size: 17,
                       ),
+
                       const SizedBox(width: 4),
+
                       Expanded(
                         child: Text(
                           hotel.location,
@@ -954,7 +1095,9 @@ class _SearchResultCard extends StatelessWidget {
                                   color: AppColors.placeholder,
                                   size: 15,
                                 ),
+
                                 const SizedBox(width: 5),
+
                                 Expanded(
                                   child: Text(
                                     room?.bedType ?? '-',
@@ -968,7 +1111,9 @@ class _SearchResultCard extends StatelessWidget {
                                 ),
                               ],
                             ),
+
                             const SizedBox(height: 8),
+
                             Row(
                               children: [
                                 const Icon(
@@ -976,7 +1121,9 @@ class _SearchResultCard extends StatelessWidget {
                                   color: AppColors.placeholder,
                                   size: 15,
                                 ),
+
                                 const SizedBox(width: 5),
+
                                 Text(
                                   '$guestCount Dewasa',
                                   style: const TextStyle(
@@ -1002,7 +1149,9 @@ class _SearchResultCard extends StatelessWidget {
                               fontWeight: FontWeight.w900,
                             ),
                           ),
+
                           const SizedBox(height: 3),
+
                           RichText(
                             text: TextSpan(
                               children: [
@@ -1016,6 +1165,7 @@ class _SearchResultCard extends StatelessWidget {
                                     fontWeight: FontWeight.w900,
                                   ),
                                 ),
+
                                 const TextSpan(
                                   text: '/malam',
                                   style: TextStyle(

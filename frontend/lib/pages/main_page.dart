@@ -1,8 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../widgets/bottom_navbar.dart';
 import '../models/search_filter_model.dart';
+import '../widgets/bottom_navbar.dart';
 import 'home/home_page.dart';
 import 'orders/order_page.dart';
 import 'profile/profile_page.dart';
@@ -17,8 +17,9 @@ class MainPage extends StatefulWidget {
 
 class _MainPageState extends State<MainPage> {
   int _selectedIndex = 0;
-  SearchFilterModel? _searchFilter;
-  DateTime? _lastBackPressed;
+
+  final GlobalKey<SearchPageState> _searchPageKey =
+      GlobalKey<SearchPageState>();
 
   void _onItemSelected(int index) {
     setState(() {
@@ -52,8 +53,13 @@ class _MainPageState extends State<MainPage> {
 
   void _onSearchFromHome(SearchFilterModel filter) {
     setState(() {
-      _searchFilter = filter;
       _selectedIndex = 1;
+    });
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (!mounted) return;
+
+      _searchPageKey.currentState?.searchFromExternalFilter(filter);
     });
   }
 
@@ -61,7 +67,7 @@ class _MainPageState extends State<MainPage> {
   Widget build(BuildContext context) {
     final pages = [
       HomePage(onSearchSubmitted: _onSearchFromHome),
-      SearchPage(initialFilter: _searchFilter),
+      SearchPage(key: _searchPageKey),
       const OrderPage(),
       const ProfilePage(),
     ];
