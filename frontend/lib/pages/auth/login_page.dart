@@ -28,6 +28,7 @@ class _LoginPageState extends State<LoginPage> {
 
   bool _obscurePassword = true;
   bool _isSubmitting = false;
+  bool _isGoogleSubmitting = false;
 
   @override
   void dispose() {
@@ -68,6 +69,36 @@ class _LoginPageState extends State<LoginPage> {
         SnackBar(
           content: Text(
             result['message']?.toString() ?? 'Email atau password salah',
+          ),
+        ),
+      );
+    }
+  }
+
+  Future<void> _submitGoogle() async {
+    if (_isGoogleSubmitting) return;
+
+    setState(() {
+      _isGoogleSubmitting = true;
+    });
+
+    final result = await AuthService().loginWithGoogle();
+
+    if (!mounted) return;
+
+    setState(() {
+      _isGoogleSubmitting = false;
+    });
+
+    if (result['success'] == true) {
+      Navigator.of(
+        context,
+      ).pushNamedAndRemoveUntil(AppRoutes.main, (route) => false);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(
+            result['message']?.toString() ?? 'Login Google gagal',
           ),
         ),
       );
@@ -147,7 +178,10 @@ class _LoginPageState extends State<LoginPage> {
 
             const SizedBox(height: 20),
 
-            const GoogleButton(),
+            GoogleButton(
+              onPressed: _submitGoogle,
+              isLoading: _isGoogleSubmitting,
+            ),
           ],
         ),
       ),

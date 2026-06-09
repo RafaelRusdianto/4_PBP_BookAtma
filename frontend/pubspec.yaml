@@ -12,6 +12,7 @@ dependencies:
 
   http: ^1.2.2
   shared_preferences: ^2.2.3
+  google_sign_in: ^6.2.2
   geolocator: ^13.0.1
   geocoding: ^3.0.0
 

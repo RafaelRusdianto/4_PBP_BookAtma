@@ -9,6 +9,8 @@ import '../../services/auth_service.dart';
 import '../../widgets/auth_scaffold.dart';
 import '../../widgets/auth_text_field.dart';
 import '../../widgets/back_circle_button.dart';
+import '../../widgets/divider_with_text.dart';
+import '../../widgets/google_button.dart';
 import '../../widgets/primary_button.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -27,6 +29,7 @@ class _RegisterPageState extends State<RegisterPage> {
   final _confirmPasswordController = TextEditingController();
   bool _obscurePassword = true;
   bool _obscureConfirmPassword = true;
+  bool _isGoogleSubmitting = false;
 
   @override
   void dispose() {
@@ -61,6 +64,34 @@ class _RegisterPageState extends State<RegisterPage> {
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text(result['message']), backgroundColor: Colors.red),
+      );
+    }
+  }
+
+  Future<void> _submitGoogle() async {
+    if (_isGoogleSubmitting) return;
+
+    setState(() {
+      _isGoogleSubmitting = true;
+    });
+
+    final result = await AuthService().loginWithGoogle();
+
+    if (!mounted) return;
+
+    setState(() {
+      _isGoogleSubmitting = false;
+    });
+
+    if (result['success'] == true) {
+      Navigator.of(
+        context,
+      ).pushNamedAndRemoveUntil(AppRoutes.main, (route) => false);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result['message']?.toString() ?? 'Login Google gagal'),
+        ),
       );
     }
   }
@@ -178,6 +209,18 @@ class _RegisterPageState extends State<RegisterPage> {
             const SizedBox(height: 22),
 
             PrimaryButton(label: 'Buat Akun', onPressed: _submit),
+
+            const SizedBox(height: 24),
+
+            const DividerWithText(text: 'atau'),
+
+            const SizedBox(height: 20),
+
+            GoogleButton(
+              onPressed: _submitGoogle,
+              isLoading: _isGoogleSubmitting,
+              label: 'Daftar dengan Google',
+            ),
           ],
         ),
       ),

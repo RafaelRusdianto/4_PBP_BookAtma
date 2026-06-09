@@ -2,10 +2,76 @@ import 'dart:convert';
 
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:google_sign_in/google_sign_in.dart';
 
 import '../config/api_config.dart';
 
 class AuthService {
+  final GoogleSignIn _googleSignIn = GoogleSignIn(scopes: const ['email']);
+
+  // Login/registrasi memakai akun Google. Kalau email belum terdaftar,
+  // backend (/google-login) otomatis membuat user baru, jadi method ini
+  // sekaligus berfungsi untuk register.
+  Future<Map<String, dynamic>> loginWithGoogle() async {
+    try {
+      // Pastikan tidak nyangkut di sesi sebelumnya supaya pemilihan akun muncul.
+      await _googleSignIn.signOut();
+
+      final account = await _googleSignIn.signIn();
+      if (account == null) {
+        return {'success': false, 'message': 'Login Google dibatalkan'};
+      }
+
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/google-login'),
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+        body: jsonEncode({
+          'email': account.email,
+          'nama': account.displayName ?? account.email,
+        }),
+      );
+
+      final data = _decodeObject(response.body);
+
+      if (response.statusCode == 200) {
+        final token = data['token'];
+
+        if (token is! String || token.isEmpty) {
+          return {
+            'success': false,
+            'message': 'Token login tidak ditemukan di response server',
+          };
+        }
+
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('token', token);
+
+        final nama = data['user']?['nama'];
+        if (nama is String && nama.isNotEmpty) {
+          await prefs.setString('nama', nama);
+        }
+
+        return {
+          'success': true,
+          'message': data['message'] ?? 'Login Google berhasil',
+        };
+      }
+
+      return {
+        'success': false,
+        'message': _errorMessage(data, fallback: 'Login Google gagal'),
+      };
+    } catch (_) {
+      return {
+        'success': false,
+        'message': 'Gagal login dengan Google. Periksa konfigurasi & koneksi.',
+      };
+    }
+  }
+
   Future<Map<String, dynamic>> login({
     required String email,
     required String password,
@@ -123,6 +189,10 @@ class AuthService {
 
     await prefs.remove('token');
     await prefs.remove('nama');
+
+    try {
+      await _googleSignIn.signOut();
+    } catch (_) {}
   }
 
   // Nama user yang sedang login. Pakai cache dari login dulu, kalau kosong
