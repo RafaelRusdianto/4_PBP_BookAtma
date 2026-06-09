@@ -36,6 +36,45 @@ class BookingModel {
     this.airportPickup = false,
   });
 
+  factory BookingModel.fromJson(Map<String, dynamic> json) {
+    // Backend may provide nested structure: detailBooking -> kamar -> hotel
+    Map<String, dynamic> roomJson = {};
+    Map<String, dynamic> hotelJson = {};
+
+    if (json['room'] != null && json['hotel'] != null) {
+      roomJson = Map<String, dynamic>.from(json['room']);
+      hotelJson = Map<String, dynamic>.from(json['hotel']);
+    } else if (json['detailBooking'] is List && (json['detailBooking'] as List).isNotEmpty) {
+      final first = Map<String, dynamic>.from((json['detailBooking'] as List).first ?? {});
+      if (first['kamar'] is Map) {
+        roomJson = Map<String, dynamic>.from(first['kamar']);
+        if (roomJson['hotel'] is Map) {
+          hotelJson = Map<String, dynamic>.from(roomJson['hotel']);
+        }
+      }
+    } else if (json['data'] is Map) {
+      // sometimes wrapper
+      return BookingModel.fromJson(Map<String, dynamic>.from(json['data']));
+    }
+
+    return BookingModel(
+      hotel: HotelModel.fromJson(hotelJson),
+      room: RoomModel.fromJson(roomJson),
+      checkInDate: json['check_in'] == null ? null : DateTime.tryParse(json['check_in'].toString()),
+      checkOutDate: json['check_out'] == null ? null : DateTime.tryParse(json['check_out'].toString()),
+      guestName: (json['guest_name'] ?? json['guest'] ?? '').toString(),
+      specialRequest: (json['special_request'] ?? json['specialRequest'] ?? '').toString(),
+      note: (json['note'] ?? '').toString(),
+      paymentMethod: (json['payment_method'] ?? json['paymentMethod'] ?? '').toString(),
+      bookingCode: (json['booking_code'] ?? json['bookingCode'] ?? '').toString(),
+      itineraryId: (json['itinerary_id'] ?? json['itineraryId'] ?? '').toString(),
+      status: (json['status'] ?? '').toString(),
+      breakfast: (json['breakfast'] == 1 || json['breakfast'] == true),
+      laundry: (json['laundry'] == 1 || json['laundry'] == true),
+      airportPickup: (json['airport_pickup'] == 1 || json['airport_pickup'] == true),
+    );
+  }
+
   int get nights {
     if (checkInDate == null || checkOutDate == null) {
       return 0;
