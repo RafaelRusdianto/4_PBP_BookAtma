@@ -481,47 +481,6 @@ class _SearchPageState extends State<SearchPage> {
                   },
                 ),
 
-                const SizedBox(height: 28),
-
-                Row(
-                  children: [
-                    const Text(
-                      'TERAKHIR DICARI',
-                      style: TextStyle(
-                        color: AppColors.placeholder,
-                        fontSize: 12,
-                        fontWeight: FontWeight.w900,
-                        letterSpacing: 0.4,
-                      ),
-                    ),
-                    const Spacer(),
-                    TextButton(
-                      onPressed: _resetSearch,
-                      child: const Text(
-                        'Hapus Semua',
-                        style: TextStyle(
-                          color: AppColors.primary,
-                          fontSize: 12,
-                          fontWeight: FontWeight.w900,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-
-                const SizedBox(height: 8),
-
-                _RecentSearchItem(
-                  title: 'The Ritz-Carlton Jakarta',
-                  subtitle: 'Hotel • Jakarta',
-                  onTap: () {
-                    _runSearch(
-                      const SearchFilterModel(
-                        keyword: 'The Ritz-Carlton Jakarta',
-                      ),
-                    );
-                  },
-                ),
               ],
             ),
           ),
@@ -812,67 +771,6 @@ class _DestinationItem extends StatelessWidget {
             ),
           ],
         ),
-      ),
-    );
-  }
-}
-
-class _RecentSearchItem extends StatelessWidget {
-  final String title;
-  final String subtitle;
-  final VoidCallback onTap;
-
-  const _RecentSearchItem({
-    required this.title,
-    required this.subtitle,
-    required this.onTap,
-  });
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      borderRadius: BorderRadius.circular(16),
-      onTap: onTap,
-      child: Row(
-        children: [
-          Container(
-            width: 38,
-            height: 38,
-            decoration: BoxDecoration(
-              color: const Color(0xFFF1F5F9),
-              borderRadius: BorderRadius.circular(12),
-            ),
-            child: const Icon(
-              Icons.history,
-              color: Color(0xFF64748B),
-            ),
-          ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  title,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: AppColors.black,
-                    fontSize: 15,
-                    fontWeight: FontWeight.w900,
-                  ),
-                ),
-                const SizedBox(height: 3),
-                Text(
-                  subtitle,
-                  style: const TextStyle(
-                    color: AppColors.placeholder,
-                    fontSize: 12,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ],
       ),
     );
   }
