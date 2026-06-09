@@ -159,6 +159,9 @@ class HotelModel {
     return values.isEmpty ? null : values.first;
   }
 
+  // Versi publik dari _toInt agar bisa dipakai model lain. Mengembalikan 0 bila gagal.
+  static int parseInt(dynamic value) => _toInt(value) ?? 0;
+
   static int? _toInt(dynamic value) {
     if (value == null) return null;
     if (value is int) return value;

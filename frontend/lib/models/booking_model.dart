@@ -19,6 +19,10 @@ class BookingModel {
   bool laundry;
   bool airportPickup;
 
+  // Total & jumlah malam dari server (0 berarti tidak tersedia / pakai hitungan lokal).
+  int totalHargaServer;
+  int nightsServer;
+
   BookingModel({
     required this.hotel,
     required this.room,
@@ -34,18 +38,26 @@ class BookingModel {
     this.breakfast = false,
     this.laundry = false,
     this.airportPickup = false,
+    this.totalHargaServer = 0,
+    this.nightsServer = 0,
   });
 
   factory BookingModel.fromJson(Map<String, dynamic> json) {
-    // Backend may provide nested structure: detailBooking -> kamar -> hotel
+    // Struktur dari backend: detail_booking -> kamar -> hotel
     Map<String, dynamic> roomJson = {};
     Map<String, dynamic> hotelJson = {};
+    int nightsServer = 0;
+
+    // Relasi dari Laravel di-serialize sebagai snake_case (detail_booking),
+    // tapi tetap dukung camelCase sebagai cadangan.
+    final detailList = json['detail_booking'] ?? json['detailBooking'];
 
     if (json['room'] != null && json['hotel'] != null) {
       roomJson = Map<String, dynamic>.from(json['room']);
       hotelJson = Map<String, dynamic>.from(json['hotel']);
-    } else if (json['detailBooking'] is List && (json['detailBooking'] as List).isNotEmpty) {
-      final first = Map<String, dynamic>.from((json['detailBooking'] as List).first ?? {});
+    } else if (detailList is List && detailList.isNotEmpty) {
+      final first = Map<String, dynamic>.from(detailList.first ?? {});
+      nightsServer = HotelModel.parseInt(first['jumlah_malam']);
       if (first['kamar'] is Map) {
         roomJson = Map<String, dynamic>.from(first['kamar']);
         if (roomJson['hotel'] is Map) {
@@ -57,6 +69,8 @@ class BookingModel {
       return BookingModel.fromJson(Map<String, dynamic>.from(json['data']));
     }
 
+    final idBooking = json['id_booking'];
+
     return BookingModel(
       hotel: HotelModel.fromJson(hotelJson),
       room: RoomModel.fromJson(roomJson),
@@ -66,12 +80,16 @@ class BookingModel {
       specialRequest: (json['special_request'] ?? json['specialRequest'] ?? '').toString(),
       note: (json['note'] ?? '').toString(),
       paymentMethod: (json['payment_method'] ?? json['paymentMethod'] ?? '').toString(),
-      bookingCode: (json['booking_code'] ?? json['bookingCode'] ?? '').toString(),
-      itineraryId: (json['itinerary_id'] ?? json['itineraryId'] ?? '').toString(),
+      bookingCode: idBooking != null
+          ? 'BA-$idBooking'
+          : (json['booking_code'] ?? json['bookingCode'] ?? '').toString(),
+      itineraryId: (json['itinerary_id'] ?? json['itineraryId'] ?? idBooking ?? '').toString(),
       status: (json['status'] ?? '').toString(),
       breakfast: (json['breakfast'] == 1 || json['breakfast'] == true),
       laundry: (json['laundry'] == 1 || json['laundry'] == true),
       airportPickup: (json['airport_pickup'] == 1 || json['airport_pickup'] == true),
+      totalHargaServer: HotelModel.parseInt(json['total_harga']),
+      nightsServer: nightsServer,
     );
   }
 
@@ -82,6 +100,13 @@ class BookingModel {
 
     return checkOutDate!.difference(checkInDate!).inDays;
   }
+
+  // Jumlah malam: pakai data server bila ada, jika tidak hitung dari tanggal.
+  int get displayNights => nightsServer > 0 ? nightsServer : nights;
+
+  // Total bayar: pakai total_harga dari server bila ada (yang benar-benar
+  // tersimpan), jika tidak hitung lokal dari kamar + pajak + add-on.
+  int get displayTotal => totalHargaServer > 0 ? totalHargaServer : totalPayment;
 
   int get roomTotal {
     int totalNight = nights == 0 ? 1 : nights;

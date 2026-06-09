@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 
 import '../../core/theme/app_colors.dart';
+import '../../core/format_helper.dart';
 import '../../models/booking_model.dart';
 import '../../services/booking_service.dart';
 
@@ -248,7 +249,7 @@ class OrderDetailPage extends StatelessWidget {
           _detailRow('Check-in', _formatDate(booking.checkInDate ?? DateTime.now())),
           _detailRow('Check-out', _formatDate(booking.checkOutDate ?? DateTime.now())),
           _detailRow('Tipe Kamar', booking.room.name),
-          _detailRow('Total Bayar', 'IDR ${booking.totalPayment.toString()}'),
+          _detailRow('Total Bayar', FormatHelper.rupiah(booking.displayTotal)),
           const SizedBox(height: 20),
           if (showReviewButton)
             ElevatedButton(
