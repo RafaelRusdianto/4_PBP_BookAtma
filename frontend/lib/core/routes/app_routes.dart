@@ -16,6 +16,7 @@ import '../../pages/voucher/voucher_page.dart';
 import '../../pages/voucher/voucher_pdf_preview_page.dart';
 import '../../pages/orders/order_page.dart';
 import '../../pages/profile/profile_page.dart';
+import '../../pages/auth/experience_settings_page.dart';
 import '../../pages/search/search_page.dart';
 
 class AppRoutes {
@@ -57,6 +58,7 @@ class AppRoutes {
     voucherPdf: (context) => const VoucherPdfPreviewPage(),
     order: (context) => const OrderPage(),
     profile: (context) => const ProfilePage(),
+    settings: (context) => const ExperienceSettingsPage(),
     search: (context) => const SearchPage(),
   };
 }
