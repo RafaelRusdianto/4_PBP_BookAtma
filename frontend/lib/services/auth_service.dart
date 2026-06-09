@@ -52,10 +52,10 @@ class AuthService {
         'success': false,
         'message': _errorMessage(data, fallback: 'Email atau password salah'),
       };
-    } catch (_) {
+    } catch (e) {
       return {
         'success': false,
-        'message': 'Tidak dapat terhubung ke server. Periksa backend dan URL API.',
+        'message': 'Tidak dapat terhubung ke server. Periksa backend dan URL API. (${e.toString()})',
       };
     }
   }
