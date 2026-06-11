@@ -89,27 +89,15 @@ class AuthService {
         }),
       );
 
-      final data = jsonDecode(response.body);
-
-      print(response.statusCode);
-      print(response.body);
+      final data = _decodeObject(response.body);
 
       if (response.statusCode == 201) {
         return {'success': true, 'message': data['message']};
       } else {
-        String errorMessage = 'Register gagal';
-
-        if (data['message'] != null) {
-          errorMessage = data['message'];
-        }
-
-        if (data['errors'] != null) {
-          final errors = data['errors'] as Map<String, dynamic>;
-
-          errorMessage = errors.values.first[0];
-        }
-
-        return {'success': false, 'message': errorMessage};
+        return {
+          'success': false,
+          'message': _errorMessage(data, fallback: 'Register gagal'),
+        };
       }
     } catch (e) {
       return {'success': false, 'message': 'Tidak dapat terhubung ke server'};

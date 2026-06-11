@@ -142,15 +142,7 @@ class VoucherPage extends StatelessWidget {
                           const SizedBox(height: 12),
                           Row(
                             children: [
-                              ClipRRect(
-                                borderRadius: BorderRadius.circular(10),
-                                child: Image.network(
-                                  booking.hotel.imageUrls.first,
-                                  width: 74,
-                                  height: 58,
-                                  fit: BoxFit.cover,
-                                ),
-                              ),
+                              _HotelImage(imageUrl: booking.hotel.imageUrl),
                               const SizedBox(width: 12),
                               Expanded(
                                 child: Column(
@@ -386,6 +378,43 @@ class _InfoColumn extends StatelessWidget {
           ),
         ),
       ],
+    );
+  }
+}
+
+class _HotelImage extends StatelessWidget {
+  final String? imageUrl;
+
+  const _HotelImage({
+    required this.imageUrl,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final url = imageUrl;
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(10),
+      child: Container(
+        width: 74,
+        height: 58,
+        color: AppColors.background,
+        child: url == null || url.isEmpty
+            ? const Icon(
+                Icons.hotel_outlined,
+                color: AppColors.textDisabled,
+              )
+            : Image.network(
+                url,
+                fit: BoxFit.cover,
+                errorBuilder: (context, error, stackTrace) {
+                  return const Icon(
+                    Icons.hotel_outlined,
+                    color: AppColors.textDisabled,
+                  );
+                },
+              ),
+      ),
     );
   }
 }
