@@ -32,8 +32,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::get('/profile', [UserController::class, 'profile']);
     Route::post('/logout', [UserController::class, 'logout']);
 
+    Route::post('/bookings', [BookingController::class, 'store']);
     Route::get('/bookings/active', [BookingController::class, 'active']);
     Route::get('/bookings/history', [BookingController::class, 'history']);
     Route::get('/bookings/{id}', [BookingController::class, 'show']);
 });
-

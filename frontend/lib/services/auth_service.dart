@@ -37,6 +37,12 @@ class AuthService {
         final prefs = await SharedPreferences.getInstance();
         await prefs.setString('token', token);
 
+        final userId = data['user']?['id_user'];
+        final parsedUserId = int.tryParse(userId?.toString() ?? '');
+        if (parsedUserId != null) {
+          await prefs.setInt('id_user', parsedUserId);
+        }
+
         final nama = data['user']?['nama'];
         if (nama is String && nama.isNotEmpty) {
           await prefs.setString('nama', nama);
@@ -123,6 +129,7 @@ class AuthService {
 
     await prefs.remove('token');
     await prefs.remove('nama');
+    await prefs.remove('id_user');
   }
 
   // Nama user yang sedang login. Pakai cache dari login dulu, kalau kosong

@@ -86,8 +86,10 @@ class _WaitingPaymentPageState extends State<WaitingPaymentPage> {
                           );
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
-                            const SnackBar(
-                              content: Text('Booking gagal diproses'),
+                            SnackBar(
+                              content: Text(
+                                BookingService.lastError ?? 'Booking gagal diproses',
+                              ),
                             ),
                           );
                         }

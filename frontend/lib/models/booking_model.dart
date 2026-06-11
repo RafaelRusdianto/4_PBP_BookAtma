@@ -3,6 +3,9 @@ import 'hotel_model.dart';
 class BookingModel {
   final HotelModel hotel;
   final RoomModel room;
+  final int? idBooking;
+  final int? idPembayaran;
+  final int? backendTotalPayment;
 
   DateTime? checkInDate;
   DateTime? checkOutDate;
@@ -22,6 +25,9 @@ class BookingModel {
   BookingModel({
     required this.hotel,
     required this.room,
+    this.idBooking,
+    this.idPembayaran,
+    this.backendTotalPayment,
     this.checkInDate,
     this.checkOutDate,
     this.guestName = 'Budi Santoso',
@@ -37,42 +43,77 @@ class BookingModel {
   });
 
   factory BookingModel.fromJson(Map<String, dynamic> json) {
+    if (json['data'] is Map) {
+      return BookingModel.fromJson(Map<String, dynamic>.from(json['data']));
+    }
+
     // Backend may provide nested structure: detailBooking -> kamar -> hotel
     Map<String, dynamic> roomJson = {};
     Map<String, dynamic> hotelJson = {};
+    Map<String, dynamic> paymentJson = {};
+    final detailBookings = json['detailBooking'] ?? json['detail_booking'];
 
     if (json['room'] != null && json['hotel'] != null) {
       roomJson = Map<String, dynamic>.from(json['room']);
       hotelJson = Map<String, dynamic>.from(json['hotel']);
-    } else if (json['detailBooking'] is List && (json['detailBooking'] as List).isNotEmpty) {
-      final first = Map<String, dynamic>.from((json['detailBooking'] as List).first ?? {});
+    } else if (detailBookings is List && detailBookings.isNotEmpty) {
+      final first = Map<String, dynamic>.from(detailBookings.first ?? {});
       if (first['kamar'] is Map) {
         roomJson = Map<String, dynamic>.from(first['kamar']);
         if (roomJson['hotel'] is Map) {
           hotelJson = Map<String, dynamic>.from(roomJson['hotel']);
         }
       }
-    } else if (json['data'] is Map) {
-      // sometimes wrapper
-      return BookingModel.fromJson(Map<String, dynamic>.from(json['data']));
+    }
+
+    if (json['pembayaran'] is Map) {
+      paymentJson = Map<String, dynamic>.from(json['pembayaran']);
     }
 
     return BookingModel(
       hotel: HotelModel.fromJson(hotelJson),
       room: RoomModel.fromJson(roomJson),
+      idBooking: _toInt(json['id_booking']),
+      idPembayaran: _toInt(paymentJson['id_pembayaran']),
+      backendTotalPayment: _toInt(json['total_harga']),
       checkInDate: json['check_in'] == null ? null : DateTime.tryParse(json['check_in'].toString()),
       checkOutDate: json['check_out'] == null ? null : DateTime.tryParse(json['check_out'].toString()),
       guestName: (json['guest_name'] ?? json['guest'] ?? '').toString(),
       specialRequest: (json['special_request'] ?? json['specialRequest'] ?? '').toString(),
       note: (json['note'] ?? '').toString(),
-      paymentMethod: (json['payment_method'] ?? json['paymentMethod'] ?? '').toString(),
-      bookingCode: (json['booking_code'] ?? json['bookingCode'] ?? '').toString(),
+      paymentMethod: (json['payment_method'] ??
+              json['paymentMethod'] ??
+              paymentJson['metode_pembayaran'] ??
+              '')
+          .toString(),
+      bookingCode: (json['booking_code'] ?? json['bookingCode'] ?? json['id_booking'] ?? '').toString(),
       itineraryId: (json['itinerary_id'] ?? json['itineraryId'] ?? '').toString(),
       status: (json['status'] ?? '').toString(),
       breakfast: (json['breakfast'] == 1 || json['breakfast'] == true),
       laundry: (json['laundry'] == 1 || json['laundry'] == true),
       airportPickup: (json['airport_pickup'] == 1 || json['airport_pickup'] == true),
     );
+  }
+
+  static int? _toInt(dynamic value) {
+    if (value == null) return null;
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+
+    final text = value.toString().trim();
+    final direct = num.tryParse(text);
+
+    if (direct != null) return direct.toInt();
+
+    final normalized = text
+        .replaceAll(RegExp(r'[^0-9,.]'), '')
+        .replaceAll('.', '')
+        .replaceAll(',', '.');
+    final localized = num.tryParse(normalized);
+
+    if (localized != null) return localized.toInt();
+
+    return null;
   }
 
   int get nights {
@@ -111,6 +152,10 @@ class BookingModel {
   }
 
   int get totalPayment {
+    if (backendTotalPayment != null && backendTotalPayment! > 0) {
+      return backendTotalPayment!;
+    }
+
     return roomTotal + tax + addOnTotal;
   }
 

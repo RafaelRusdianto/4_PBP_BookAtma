@@ -14,7 +14,16 @@ class OrderPage extends StatelessWidget {
     BuildContext context,
     BookingModel booking,
   ) {
-    final isCompleted = booking.status.toLowerCase().contains('selesai');
+    final today = DateTime.now();
+    final todayOnly = DateTime(today.year, today.month, today.day);
+    final checkOut = booking.checkOutDate;
+    final isCompleted = booking.status.toLowerCase().contains('selesai') ||
+        (checkOut != null && checkOut.isBefore(todayOnly));
+    final statusText = isCompleted
+        ? 'Selesai'
+        : booking.status.isEmpty
+            ? 'Aktif'
+            : booking.status;
 
     return Card(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -42,7 +51,7 @@ class OrderPage extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   child: Text(
-                    booking.status,
+                    statusText,
                     style: TextStyle(
                       color: isCompleted ? AppColors.white : AppColors.primaryDark,
                       fontSize: 12,

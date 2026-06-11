@@ -165,9 +165,17 @@ class HotelModel {
     if (value is num) return value.toInt();
 
     final text = value.toString().trim();
-    final direct = int.tryParse(text);
+    final direct = num.tryParse(text);
 
-    if (direct != null) return direct;
+    if (direct != null) return direct.toInt();
+
+    final normalized = text
+        .replaceAll(RegExp(r'[^0-9,.]'), '')
+        .replaceAll('.', '')
+        .replaceAll(',', '.');
+    final localized = num.tryParse(normalized);
+
+    if (localized != null) return localized.toInt();
 
     final digits = text.replaceAll(RegExp(r'[^0-9]'), '');
 
