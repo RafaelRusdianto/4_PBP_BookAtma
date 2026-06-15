@@ -9,14 +9,12 @@ use App\Http\Controllers\UserController;
 
 Route::get('/booking', [BookingController::class, 'index']);
 Route::get('/booking/{id}', [BookingController::class, 'show']);
-Route::post('/booking', [BookingController::class, 'store']);
 Route::get('/booking/user/{id}', [BookingController::class, 'userBooking']);
 
 Route::get('/hotel', [HotelController::class, 'index']);
 Route::get('/hotel/search', [HotelController::class, 'search']);
 Route::get('/hotel/{id}', [HotelController::class, 'show']);
 
-Route::post('/pembayaran', [PembayaranController::class, 'store']);
 Route::get('/pembayaran/{id}', [PembayaranController::class, 'show']);
 
 Route::get('/review', [ReviewController::class, 'index']);
@@ -33,6 +31,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/profile', [UserController::class, 'updateProfile']);
     Route::post('/logout', [UserController::class, 'logout']);
 
+    Route::post('/booking', [BookingController::class, 'store']);
+    Route::post('/pembayaran', [PembayaranController::class, 'store']);
     Route::get('/bookings/active', [BookingController::class, 'active']);
     Route::get('/bookings/history', [BookingController::class, 'history']);
     Route::get('/bookings/{id}', [BookingController::class, 'show']);

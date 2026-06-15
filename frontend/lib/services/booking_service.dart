@@ -74,16 +74,8 @@ class BookingService {
       return {'success': false, 'message': 'Kamar tidak valid (id_kamar kosong)'};
     }
 
-    final prefs = await SharedPreferences.getInstance();
-    final idUser = prefs.getInt('id_user');
-    if (idUser == null || idUser == 0) {
-      return {
-        'success': false,
-        'message': 'Sesi tidak valid. Silakan logout lalu login ulang.',
-      };
-    }
-
     try {
+      // 1. Kirim booking ke backend (sekarang pakai auth token, id_user dari server)
       final uri = Uri.parse('${ApiConfig.baseUrl}/booking');
       final res = await http.post(
         uri,
@@ -92,24 +84,44 @@ class BookingService {
           'Content-Type': 'application/json',
         },
         body: json.encode({
-          'id_user': idUser,
           'id_kamar': booking.room.idRoom,
           'check_in': _formatDate(checkIn),
           'check_out': _formatDate(checkOut),
           'total_harga': booking.totalPayment,
           'harga_per_malam': booking.room.price,
+          'breakfast': booking.breakfast,
+          'laundry': booking.laundry,
+          'airport_pickup': booking.airportPickup,
+          'special_request': booking.specialRequest,
+          'note': booking.note,
+          'payment_method': booking.paymentMethod,
         }),
       );
 
       if (res.statusCode != 200 && res.statusCode != 201) {
-        return {
-          'success': false,
-          'message': 'Gagal menyimpan booking: ${res.statusCode} - ${res.body}',
-        };
+        final body = json.decode(res.body);
+        final msg = body['message'] ?? 'Gagal menyimpan booking: ${res.statusCode}';
+        return {'success': false, 'message': msg};
       }
 
+      final responseData = json.decode(res.body);
       booking.status = 'Booking Berhasil';
-      return {'success': true, 'message': 'Booking berhasil disimpan'};
+
+      // Update booking code dari server
+      final serverData = responseData['data'];
+      if (serverData is Map) {
+        final idBooking = serverData['id_booking'];
+        if (idBooking != null) {
+          booking.bookingCode = 'BA-$idBooking';
+          booking.itineraryId = idBooking.toString();
+        }
+      }
+
+      return {
+        'success': true,
+        'message': 'Booking berhasil disimpan',
+        'data': responseData,
+      };
     } catch (e) {
       return {
         'success': false,

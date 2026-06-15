@@ -15,7 +15,13 @@ class Booking extends Model
         'check_in',
         'check_out',
         'total_harga',
-        'status'
+        'status',
+        'breakfast',
+        'laundry',
+        'airport_pickup',
+        'special_request',
+        'note',
+        'payment_method'
     ];
 
     public function user()

@@ -147,12 +147,15 @@ class HotelModel {
 
     final uri = Uri.tryParse(url);
 
+    // Jika URL sudah lengkap (punya scheme), gunakan langsung
     if (uri != null && uri.hasScheme) return url;
 
+    // Path relatif → tambahkan base URL + /storage/ (karena file disimpan
+    // di storage/app/public/ dan diakses via symlink public/storage)
     final apiUri = Uri.parse(ApiConfig.baseUrl);
-    final path = url.startsWith('/') ? url : '/$url';
+    final cleanPath = url.startsWith('/') ? url.substring(1) : url;
 
-    return '${apiUri.scheme}://${apiUri.authority}$path';
+    return '${apiUri.scheme}://${apiUri.authority}/storage/$cleanPath';
   }
 
   static String? _firstOrNull(List<String> values) {

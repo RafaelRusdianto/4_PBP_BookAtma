@@ -301,12 +301,15 @@ class _HotelSummaryCard extends StatelessWidget {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
-            child: Image.network(
-              booking.room.imageUrl,
-              width: 82,
-              height: 82,
-              fit: BoxFit.cover,
-            ),
+            child: booking.room.imageUrl.isNotEmpty
+                ? Image.network(
+                    booking.room.imageUrl,
+                    width: 82,
+                    height: 82,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) => _buildImagePlaceholder(),
+                  )
+                : _buildImagePlaceholder(),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -361,6 +364,19 @@ class _HotelSummaryCard extends StatelessWidget {
             ),
           ),
         ],
+      ),
+    );
+  }
+
+  Widget _buildImagePlaceholder() {
+    return Container(
+      width: 82,
+      height: 82,
+      color: AppColors.softBlue,
+      child: const Icon(
+        Icons.image_outlined,
+        color: AppColors.mutedText,
+        size: 32,
       ),
     );
   }

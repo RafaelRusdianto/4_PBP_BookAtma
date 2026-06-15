@@ -7,7 +7,7 @@ class ApiConfig {
     }
 
     if (defaultTargetPlatform == TargetPlatform.android) {
-      return 'http://10.0.2.2:8000/api';
+      return 'http://10.38.235.165:8000/api';
     }
 
     // Untuk iOS simulator, desktop, dan build native alain di mesin yang sama.

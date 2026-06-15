@@ -12,9 +12,10 @@ class ChooseDatePage extends StatefulWidget {
 }
 
 class _ChooseDatePageState extends State<ChooseDatePage> {
-  DateTime currentMonth = DateTime(2026, 10, 1);
-  DateTime? checkInDate;
+  DateTime currentMonth = DateTime.now();
+  DateTime? checkInDate = DateTime.now();
   DateTime? checkOutDate;
+  final DateTime today = DateTime(DateTime.now().year, DateTime.now().month, DateTime.now().day);
 
   String monthName(int month) {
     List<String> months = [
@@ -43,7 +44,13 @@ class _ChooseDatePageState extends State<ChooseDatePage> {
     return checkOutDate!.difference(checkInDate!).inDays;
   }
 
+  bool isDateDisabled(DateTime date) {
+    return date.isBefore(today);
+  }
+
   void selectDate(DateTime selectedDate) {
+    if (isDateDisabled(selectedDate)) return;
+
     setState(() {
       if (checkInDate == null) {
         checkInDate = selectedDate;
@@ -76,12 +83,16 @@ class _ChooseDatePageState extends State<ChooseDatePage> {
   }
 
   void previousMonth() {
+    final newMonth = DateTime(
+      currentMonth.year,
+      currentMonth.month - 1,
+      1,
+    );
+    final todayMonthStart = DateTime(today.year, today.month, 1);
+    if (newMonth.isBefore(todayMonthStart)) return;
+
     setState(() {
-      currentMonth = DateTime(
-        currentMonth.year,
-        currentMonth.month - 1,
-        1,
-      );
+      currentMonth = newMonth;
     });
   }
 
@@ -263,6 +274,7 @@ class _ChooseDatePageState extends State<ChooseDatePage> {
                         month: currentMonth,
                         isSelectedDate: isSelectedDate,
                         isBetweenDate: isBetweenDate,
+                        isDisabled: isDateDisabled,
                         onDateTap: selectDate,
                       ),
                       const SizedBox(height: 18),
@@ -390,12 +402,14 @@ class _CalendarGrid extends StatelessWidget {
   final DateTime month;
   final bool Function(DateTime date) isSelectedDate;
   final bool Function(DateTime date) isBetweenDate;
+  final bool Function(DateTime date) isDisabled;
   final Function(DateTime date) onDateTap;
 
   const _CalendarGrid({
     required this.month,
     required this.isSelectedDate,
     required this.isBetweenDate,
+    required this.isDisabled,
     required this.onDateTap,
   });
 
@@ -414,13 +428,12 @@ class _CalendarGrid extends StatelessWidget {
       DateTime date = DateTime(month.year, month.month, day);
       bool selected = isSelectedDate(date);
       bool between = isBetweenDate(date);
+      bool disabled = isDisabled(date);
 
       items.add(
         InkWell(
           borderRadius: BorderRadius.circular(20),
-          onTap: () {
-            onDateTap(date);
-          },
+          onTap: disabled ? null : () => onDateTap(date),
           child: Container(
             alignment: Alignment.center,
             decoration: BoxDecoration(
@@ -435,7 +448,11 @@ class _CalendarGrid extends StatelessWidget {
             child: Text(
               '$day',
               style: TextStyle(
-                color: selected ? AppColors.white : AppColors.black,
+                color: disabled
+                    ? AppColors.placeholder.withValues(alpha: 0.5)
+                    : selected
+                        ? AppColors.white
+                        : AppColors.black,
                 fontSize: 12,
                 fontWeight: selected ? FontWeight.w900 : FontWeight.w500,
               ),

@@ -2,7 +2,7 @@ import 'package:barcode_widget/barcode_widget.dart';
 import 'package:flutter/material.dart';
 
 import '../../core/format_helper.dart';
-import '../../core/theme/app_colors.dart';
+import '../../constants/app_colors.dart';
 import '../../models/booking_model.dart';
 import '../../services/booking_service.dart';
 
@@ -42,7 +42,7 @@ class OrderPage extends StatelessWidget {
 
   Widget _buildOrderCard(BuildContext context, BookingModel booking) {
     final isCompleted = booking.status.toLowerCase().contains('selesai');
-    final statusText = isCompleted ? 'SELESAI' : 'ISSUED';
+    final statusText = isCompleted ? 'SELESAI' : 'AKTIF';
     final statusColor = isCompleted ? AppColors.mutedText : AppColors.success;
     final reviewText = isCompleted
         ? 'Pengalaman menginap yang luar biasa, pelayanan sangat...'
@@ -288,7 +288,7 @@ class OrderDetailPage extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final statusText = showReviewButton ? 'SELESAI' : 'ISSUED';
+    final statusText = showReviewButton ? 'SELESAI' : 'AKTIF';
     final statusColor =
         showReviewButton ? AppColors.mutedText : AppColors.success;
     final nights = booking.displayNights <= 0 ? 1 : booking.displayNights;

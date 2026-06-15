@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../constants/app_colors.dart';
@@ -22,6 +24,54 @@ class DetailHotelPage extends StatefulWidget {
 
 class _DetailHotelPageState extends State<DetailHotelPage> {
   int currentImage = 0;
+  int _totalImages = 1;
+  final PageController _pageController = PageController();
+  Timer? _autoSlideTimer;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _totalImages = _resolveHotel()?.imageUrls.length ?? 1;
+      _startAutoSlide();
+    });
+  }
+
+  @override
+  void dispose() {
+    _autoSlideTimer?.cancel();
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  HotelModel? _resolveHotel() {
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is DetailHotelPageArguments) return args.hotel;
+    if (args is HotelModel) return args;
+    return null;
+  }
+
+  void _startAutoSlide() {
+    _autoSlideTimer?.cancel();
+    if (_totalImages <= 1) return;
+    _autoSlideTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (!_pageController.hasClients) return;
+      final nextPage = currentImage + 1;
+      if (nextPage < _totalImages) {
+        _pageController.animateToPage(
+          nextPage,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeInOut,
+        );
+      } else {
+        _pageController.animateToPage(
+          0,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -66,17 +116,54 @@ class _DetailHotelPageState extends State<DetailHotelPage> {
                 child: Stack(
                   children: [
                     PageView.builder(
+                      controller: _pageController,
                       itemCount: selectedHotel.imageUrls.length,
                       onPageChanged: (index) {
                         setState(() {
                           currentImage = index;
                         });
+                        // Reset timer saat user geser manual
+                        _startAutoSlide();
                       },
                       itemBuilder: (context, index) {
                         return Image.network(
                           selectedHotel.imageUrls[index],
                           width: double.infinity,
                           fit: BoxFit.cover,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Container(
+                              color: AppColors.softBlue,
+                              child: const Center(
+                                child: CircularProgressIndicator(
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: AppColors.softBlue,
+                              child: const Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.image_outlined,
+                                    color: AppColors.mutedText,
+                                    size: 48,
+                                  ),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    'Foto tidak tersedia',
+                                    style: TextStyle(
+                                      color: AppColors.mutedText,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
                         );
                       },
                     ),
