@@ -565,6 +565,20 @@ CREATE TABLE `review` (
   `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
+-- --------------------------------------------------------
+
+--
+-- Table structure for table `review_foto`
+--
+
+CREATE TABLE `review_foto` (
+  `id_review_foto` int(11) NOT NULL,
+  `id_review` int(11) NOT NULL,
+  `url_foto` varchar(255) NOT NULL,
+  `created_at` timestamp NOT NULL DEFAULT current_timestamp(),
+  `updated_at` timestamp NOT NULL DEFAULT current_timestamp() ON UPDATE current_timestamp()
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
+
 --
 -- Dumping data for table `review`
 --
@@ -784,6 +798,13 @@ ALTER TABLE `review`
   ADD KEY `id_hotel` (`id_hotel`);
 
 --
+-- Indexes for table `review_foto`
+--
+ALTER TABLE `review_foto`
+  ADD PRIMARY KEY (`id_review_foto`),
+  ADD KEY `id_review` (`id_review`);
+
+--
 -- Indexes for table `sessions`
 --
 ALTER TABLE `sessions`
@@ -894,6 +915,12 @@ ALTER TABLE `review`
   MODIFY `id_review` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=106;
 
 --
+-- AUTO_INCREMENT for table `review_foto`
+--
+ALTER TABLE `review_foto`
+  MODIFY `id_review_foto` int(11) NOT NULL AUTO_INCREMENT;
+
+--
 -- AUTO_INCREMENT for table `user`
 --
 ALTER TABLE `user`
@@ -965,6 +992,12 @@ ALTER TABLE `pembayaran`
 ALTER TABLE `review`
   ADD CONSTRAINT `review_ibfk_1` FOREIGN KEY (`id_pembayaran`) REFERENCES `pembayaran` (`id_pembayaran`),
   ADD CONSTRAINT `review_ibfk_2` FOREIGN KEY (`id_hotel`) REFERENCES `hotel` (`id_hotel`);
+
+--
+-- Constraints for table `review_foto`
+--
+ALTER TABLE `review_foto`
+  ADD CONSTRAINT `review_foto_ibfk_1` FOREIGN KEY (`id_review`) REFERENCES `review` (`id_review`) ON DELETE CASCADE;
 COMMIT;
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;

@@ -21,6 +21,11 @@ Route::get('/review', [ReviewController::class, 'index']);
 Route::get('/review/{id}', [ReviewController::class, 'show']);
 Route::post('/review', [ReviewController::class, 'store']);
 Route::get('/review/hotel/{id_hotel}', [ReviewController::class, 'byHotel']);
+Route::post('/review/rating', [ReviewController::class, 'saveRating']);
+Route::put('/review/{id}/keterangan', [ReviewController::class, 'updateKeterangan']);
+Route::get('/review/pembayaran/{id_pembayaran}', [ReviewController::class, 'byPembayaran']);
+Route::post('/review/{id}/upload-foto', [ReviewController::class, 'uploadFoto']);
+Route::delete('/review/foto/{id_foto}', [ReviewController::class, 'hapusFoto']);
 
 Route::post('/register', [UserController::class, 'register']);
 Route::post('/login', [UserController::class, 'login']);
