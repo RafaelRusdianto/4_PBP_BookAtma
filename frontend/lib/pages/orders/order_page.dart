@@ -4,7 +4,10 @@ import 'package:flutter/material.dart';
 import '../../core/format_helper.dart';
 import '../../constants/app_colors.dart';
 import '../../models/booking_model.dart';
+import '../../models/review_model.dart';
 import '../../services/booking_service.dart';
+import '../../services/review_service.dart';
+import '../review/write_review_page.dart';
 
 class OrderPage extends StatelessWidget {
   const OrderPage({super.key});
@@ -44,9 +47,6 @@ class OrderPage extends StatelessWidget {
     final isCompleted = booking.status.toLowerCase().contains('selesai');
     final statusText = isCompleted ? 'SELESAI' : 'AKTIF';
     final statusColor = isCompleted ? AppColors.mutedText : AppColors.success;
-    final reviewText = isCompleted
-        ? 'Pengalaman menginap yang luar biasa, pelayanan sangat...'
-        : 'Pemandangan laut yang spektakuler dari kamar. Sarapa...';
 
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
@@ -56,7 +56,7 @@ class OrderPage extends StatelessWidget {
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-            color: AppColors.bodyText.withOpacity(0.04),
+            color: AppColors.bodyText.withValues(alpha: 0.04),
             blurRadius: 12,
             offset: const Offset(0, 6),
           ),
@@ -68,88 +68,97 @@ class OrderPage extends StatelessWidget {
           _OrderHotelImage(imageUrl: booking.hotel.imageUrl),
           const SizedBox(width: 12),
           Expanded(
-            child: SizedBox(
-              height: 108,
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Expanded(
-                        child: Text(
-                          booking.hotel.name,
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                          style: const TextStyle(
-                            color: AppColors.bodyText,
-                            fontSize: 14,
-                            fontWeight: FontWeight.w900,
-                          ),
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Expanded(
+                      child: Text(
+                        booking.hotel.name,
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
+                        style: const TextStyle(
+                          color: AppColors.bodyText,
+                          fontSize: 14,
+                          fontWeight: FontWeight.w900,
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      _StatusBadge(text: statusText, color: statusColor),
-                    ],
-                  ),
-                  const SizedBox(height: 3),
-                  Text(
-                    _dateRange(booking),
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: AppColors.mutedText,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
                     ),
+                    const SizedBox(width: 8),
+                    _StatusBadge(text: statusText, color: statusColor),
+                  ],
+                ),
+                const SizedBox(height: 3),
+                Text(
+                  booking.room.name,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppColors.bodyText,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w600,
                   ),
-                  const SizedBox(height: 8),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  _dateRange(booking),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppColors.mutedText,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  booking.hotel.location,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: const TextStyle(
+                    color: AppColors.mutedText,
+                    fontSize: 10,
+                    fontWeight: FontWeight.w500,
+                  ),
+                ),
+                const SizedBox(height: 6),
+                if (isCompleted)
+                  _ClickableStarRating(booking: booking)
+                else
                   const _TinyStarRating(),
-                  const SizedBox(height: 4),
-                  Text(
-                    '"$reviewText"',
-                    maxLines: 2,
-                    overflow: TextOverflow.ellipsis,
-                    style: const TextStyle(
-                      color: AppColors.mutedText,
-                      fontSize: 11,
-                      height: 1.25,
-                    ),
-                  ),
-                  const Spacer(),
-                  Align(
-                    alignment: Alignment.centerRight,
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(8),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => OrderDetailPage(
-                              booking: booking,
-                              showReviewButton: isCompleted,
-                            ),
+                const SizedBox(height: 8),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: InkWell(
+                    borderRadius: BorderRadius.circular(8),
+                    onTap: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (_) => OrderDetailPage(
+                            booking: booking,
+                            showReviewButton: isCompleted,
                           ),
-                        );
-                      },
-                      child: const Padding(
-                        padding: EdgeInsets.symmetric(
-                          horizontal: 4,
-                          vertical: 3,
                         ),
-                        child: Text(
-                          'Lihat Detail >',
-                          style: TextStyle(
-                            color: AppColors.primary,
-                            fontSize: 12,
-                            fontWeight: FontWeight.w900,
-                          ),
+                      );
+                    },
+                    child: const Padding(
+                      padding: EdgeInsets.symmetric(horizontal: 4, vertical: 3),
+                      child: Text(
+                        'Lihat Detail >',
+                        style: TextStyle(
+                          color: AppColors.primary,
+                          fontSize: 12,
+                          fontWeight: FontWeight.w900,
                         ),
                       ),
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         ],
@@ -191,10 +200,8 @@ class OrderPage extends StatelessWidget {
         return ListView.builder(
           padding: const EdgeInsets.only(top: 10, bottom: 20),
           itemCount: bookings.length,
-          itemBuilder: (context, index) => _buildOrderCard(
-            context,
-            bookings[index],
-          ),
+          itemBuilder: (context, index) =>
+              _buildOrderCard(context, bookings[index]),
         );
       },
     );
@@ -289,8 +296,9 @@ class OrderDetailPage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final statusText = showReviewButton ? 'SELESAI' : 'AKTIF';
-    final statusColor =
-        showReviewButton ? AppColors.mutedText : AppColors.success;
+    final statusColor = showReviewButton
+        ? AppColors.mutedText
+        : AppColors.success;
     final nights = booking.displayNights <= 0 ? 1 : booking.displayNights;
 
     return Scaffold(
@@ -462,35 +470,13 @@ class OrderDetailPage extends StatelessWidget {
                 const SizedBox(height: 16),
                 _StaySummary(nights: nights, roomName: booking.room.name),
                 const SizedBox(height: 22),
+                if (showReviewButton) ...[
+                  _OrderReviewSection(booking: booking),
+                  const SizedBox(height: 22),
+                ],
                 Row(
                   crossAxisAlignment: CrossAxisAlignment.end,
                   children: [
-                    if (showReviewButton)
-                      TextButton(
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (_) => const ReviewPage(),
-                            ),
-                          );
-                        },
-                        style: TextButton.styleFrom(
-                          padding: EdgeInsets.zero,
-                          minimumSize: const Size(0, 32),
-                          tapTargetSize: MaterialTapTargetSize.shrinkWrap,
-                          foregroundColor: AppColors.primary,
-                        ),
-                        child: const Text(
-                          'Tulis Ulasan >',
-                          style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w800,
-                          ),
-                        ),
-                      )
-                    else
-                      const Spacer(),
                     const Spacer(),
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.end,
@@ -577,7 +563,7 @@ class _StatusBadge extends StatelessWidget {
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: color.withOpacity(0.12),
+        color: color.withValues(alpha: 0.12),
         borderRadius: BorderRadius.circular(20),
       ),
       child: Text(
@@ -592,6 +578,163 @@ class _StatusBadge extends StatelessWidget {
   }
 }
 
+class _ClickableStarRating extends StatefulWidget {
+  final BookingModel booking;
+
+  const _ClickableStarRating({required this.booking});
+
+  @override
+  State<_ClickableStarRating> createState() => _ClickableStarRatingState();
+}
+
+class _ClickableStarRatingState extends State<_ClickableStarRating> {
+  int _selectedRating = 0;
+  String _existingKeterangan = '';
+  ReviewModel? _existingReview;
+  bool _isSaving = false;
+  bool _isLoading = true;
+  bool _isReviewed = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkExistingReview();
+  }
+
+  Future<void> _checkExistingReview() async {
+    if (widget.booking.idPembayaran <= 0) {
+      if (mounted) setState(() => _isLoading = false);
+      return;
+    }
+
+    try {
+      final review = await ReviewService.getReviewByPembayaran(
+        widget.booking.idPembayaran,
+      );
+      if (mounted) {
+        setState(() {
+          _existingReview = review;
+          _selectedRating = review?.rating ?? 0;
+          _existingKeterangan = review?.keterangan ?? '';
+          _isReviewed = _hasReviewContent(review);
+          _isLoading = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _onStarTap(int rating) async {
+    if (_isSaving || _isReviewed) return;
+    setState(() {
+      _selectedRating = rating;
+      _isSaving = true;
+    });
+
+    final result = await ReviewService.saveRating(
+      idPembayaran: widget.booking.idPembayaran,
+      idHotel: widget.booking.hotel.idHotel,
+      rating: rating,
+    );
+
+    if (!mounted) return;
+    setState(() => _isSaving = false);
+
+    if (result['success'] == true) {
+      final reviewData = result['data'];
+      final idReview = reviewData is Map
+          ? _parseInt(reviewData['id_review'])
+          : 0;
+
+      if (!mounted) return;
+
+      if (idReview <= 0) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Data review tidak valid')),
+        );
+        return;
+      }
+
+      final submitted = await Navigator.push<bool>(
+        context,
+        MaterialPageRoute(
+          builder: (_) => WriteReviewPage(
+            booking: widget.booking,
+            rating: rating,
+            idReview: idReview,
+            existingKeterangan: _existingKeterangan,
+          ),
+        ),
+      );
+
+      if (submitted == true) {
+        _checkExistingReview();
+      } else if (!_hasReviewContent(_existingReview)) {
+        _checkExistingReview();
+      }
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result['message'] ?? 'Gagal menyimpan rating')),
+      );
+      setState(() => _selectedRating = 0);
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    if (_isLoading) {
+      return const SizedBox(
+        height: 24,
+        width: 24,
+        child: Center(
+          child: SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      );
+    }
+
+    return Row(
+      children: List.generate(5, (index) {
+        final starNum = index + 1;
+        final isFilled = starNum <= _selectedRating;
+
+        final starIcon = Padding(
+          padding: const EdgeInsets.only(right: 4),
+          child: Icon(
+            isFilled ? Icons.star : Icons.star_border,
+            color: isFilled ? AppColors.yellow : AppColors.placeholder,
+            size: 22,
+          ),
+        );
+
+        // Kalo udah direview, tampilkan read-only (tanpa GestureDetector)
+        if (_isReviewed) return starIcon;
+
+        return GestureDetector(
+          onTap: _isSaving ? null : () => _onStarTap(starNum),
+          child: starIcon,
+        );
+      }),
+    );
+  }
+
+  bool _hasReviewContent(ReviewModel? review) {
+    if (review == null) return false;
+    return (review.keterangan?.trim().isNotEmpty ?? false) ||
+        review.foto.isNotEmpty;
+  }
+
+  int _parseInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '') ?? 0;
+  }
+}
+
 class _TinyStarRating extends StatelessWidget {
   const _TinyStarRating();
 
@@ -600,11 +743,7 @@ class _TinyStarRating extends StatelessWidget {
     return Row(
       children: List.generate(
         5,
-        (index) => const Icon(
-          Icons.star,
-          color: AppColors.yellow,
-          size: 11,
-        ),
+        (index) => const Icon(Icons.star, color: AppColors.yellow, size: 11),
       ),
     );
   }
@@ -618,11 +757,7 @@ class _StarRating extends StatelessWidget {
     return Row(
       children: List.generate(
         5,
-        (index) => const Icon(
-          Icons.star,
-          color: AppColors.yellow,
-          size: 13,
-        ),
+        (index) => const Icon(Icons.star, color: AppColors.yellow, size: 13),
       ),
     );
   }
@@ -684,8 +819,9 @@ class _DateBlock extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Column(
-      crossAxisAlignment:
-          alignRight ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+      crossAxisAlignment: alignRight
+          ? CrossAxisAlignment.end
+          : CrossAxisAlignment.start,
       children: [
         Text(
           title,
@@ -766,6 +902,327 @@ class _StaySummary extends StatelessWidget {
           const Icon(Icons.chevron_right, color: AppColors.mutedText, size: 20),
         ],
       ),
+    );
+  }
+}
+
+class _OrderReviewSection extends StatefulWidget {
+  const _OrderReviewSection({required this.booking});
+
+  final BookingModel booking;
+
+  @override
+  State<_OrderReviewSection> createState() => _OrderReviewSectionState();
+}
+
+class _OrderReviewSectionState extends State<_OrderReviewSection> {
+  late Future<ReviewModel?> _reviewFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    _reviewFuture = _fetchReview();
+  }
+
+  Future<ReviewModel?> _fetchReview() {
+    if (widget.booking.idPembayaran <= 0) return Future.value(null);
+    return ReviewService.getReviewByPembayaran(widget.booking.idPembayaran);
+  }
+
+  void _reloadReview() {
+    setState(() {
+      _reviewFuture = _fetchReview();
+    });
+  }
+
+  bool _hasReviewContent(ReviewModel? review) {
+    if (review == null) return false;
+    return (review.keterangan?.trim().isNotEmpty ?? false) ||
+        review.foto.isNotEmpty;
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return FutureBuilder<ReviewModel?>(
+      future: _reviewFuture,
+      builder: (context, snapshot) {
+        if (snapshot.connectionState != ConnectionState.done) {
+          return const _ReviewPanel(
+            title: 'Review',
+            child: SizedBox(
+              height: 44,
+              child: Center(
+                child: SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(strokeWidth: 2),
+                ),
+              ),
+            ),
+          );
+        }
+
+        final review = snapshot.data;
+        if (!_hasReviewContent(review)) {
+          return _ReviewPanel(
+            title: 'Tulis Review',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const Text(
+                  'Belum ada review untuk pesanan ini. Pilih rating untuk mulai menulis review.',
+                  style: TextStyle(
+                    color: AppColors.mutedText,
+                    fontSize: 12,
+                    height: 1.45,
+                    fontWeight: FontWeight.w600,
+                  ),
+                ),
+                const SizedBox(height: 12),
+                _ReviewStarInput(
+                  booking: widget.booking,
+                  existingReview: review,
+                  onFinished: _reloadReview,
+                ),
+              ],
+            ),
+          );
+        }
+
+        return _ReviewPanel(
+          title: 'Review Anda',
+          child: _SubmittedReview(review: review!),
+        );
+      },
+    );
+  }
+}
+
+class _ReviewPanel extends StatelessWidget {
+  const _ReviewPanel({required this.title, required this.child});
+
+  final String title;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(14),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF7F9FC),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            title,
+            style: const TextStyle(
+              color: AppColors.bodyText,
+              fontSize: 13,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 10),
+          child,
+        ],
+      ),
+    );
+  }
+}
+
+class _ReviewStarInput extends StatefulWidget {
+  const _ReviewStarInput({
+    required this.booking,
+    required this.existingReview,
+    required this.onFinished,
+  });
+
+  final BookingModel booking;
+  final ReviewModel? existingReview;
+  final VoidCallback onFinished;
+
+  @override
+  State<_ReviewStarInput> createState() => _ReviewStarInputState();
+}
+
+class _ReviewStarInputState extends State<_ReviewStarInput> {
+  late int _selectedRating;
+  bool _isSaving = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _selectedRating = widget.existingReview?.rating ?? 0;
+  }
+
+  Future<void> _submitRating(int rating) async {
+    if (_isSaving) return;
+
+    setState(() {
+      _selectedRating = rating;
+      _isSaving = true;
+    });
+
+    final result = await ReviewService.saveRating(
+      idPembayaran: widget.booking.idPembayaran,
+      idHotel: widget.booking.hotel.idHotel,
+      rating: rating,
+    );
+
+    if (!mounted) return;
+    setState(() => _isSaving = false);
+
+    if (result['success'] != true) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result['message'] ?? 'Gagal menyimpan rating')),
+      );
+      return;
+    }
+
+    final reviewData = result['data'];
+    final idReview = reviewData is Map
+        ? (_parseInt(reviewData['id_review']) ??
+              widget.existingReview?.idReview)
+        : widget.existingReview?.idReview;
+
+    if (idReview == null || idReview <= 0) {
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Data review tidak valid')));
+      return;
+    }
+
+    final submitted = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => WriteReviewPage(
+          booking: widget.booking,
+          rating: rating,
+          idReview: idReview,
+          existingKeterangan: widget.existingReview?.keterangan ?? '',
+        ),
+      ),
+    );
+
+    if (submitted == true) widget.onFinished();
+  }
+
+  int? _parseInt(dynamic value) {
+    if (value is int) return value;
+    if (value is num) return value.toInt();
+    return int.tryParse(value?.toString() ?? '');
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: List.generate(5, (index) {
+        final star = index + 1;
+        final selected = star <= _selectedRating;
+
+        return GestureDetector(
+          onTap: _isSaving ? null : () => _submitRating(star),
+          child: Padding(
+            padding: const EdgeInsets.only(right: 7),
+            child: Icon(
+              selected ? Icons.star : Icons.star_border,
+              color: selected ? AppColors.yellow : AppColors.placeholder,
+              size: 31,
+            ),
+          ),
+        );
+      }),
+    );
+  }
+}
+
+class _SubmittedReview extends StatelessWidget {
+  const _SubmittedReview({required this.review});
+
+  final ReviewModel review;
+
+  @override
+  Widget build(BuildContext context) {
+    final reviewText = review.keterangan?.trim();
+    final photoUrls = review.foto
+        .map((foto) => foto.resolvedUrl)
+        .where((url) => url.isNotEmpty)
+        .toList();
+
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        Row(
+          children: [
+            ...List.generate(5, (index) {
+              final selected = index < review.rating;
+              return Padding(
+                padding: const EdgeInsets.only(right: 3),
+                child: Icon(
+                  selected ? Icons.star : Icons.star_border,
+                  color: selected ? AppColors.yellow : AppColors.placeholder,
+                  size: 19,
+                ),
+              );
+            }),
+            const SizedBox(width: 8),
+            Text(
+              '${review.rating}/5',
+              style: const TextStyle(
+                color: AppColors.bodyText,
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ],
+        ),
+        const SizedBox(height: 10),
+        Text(
+          reviewText == null || reviewText.isEmpty
+              ? 'Belum ada ulasan tertulis.'
+              : reviewText,
+          style: const TextStyle(
+            color: AppColors.mutedText,
+            fontSize: 12,
+            height: 1.45,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+        if (photoUrls.isNotEmpty) ...[
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 62,
+            child: ListView.separated(
+              scrollDirection: Axis.horizontal,
+              itemCount: photoUrls.length,
+              separatorBuilder: (_, _) => const SizedBox(width: 8),
+              itemBuilder: (context, index) {
+                return ClipRRect(
+                  borderRadius: BorderRadius.circular(10),
+                  child: Image.network(
+                    photoUrls[index],
+                    width: 62,
+                    height: 62,
+                    fit: BoxFit.cover,
+                    errorBuilder: (_, _, _) => Container(
+                      width: 62,
+                      height: 62,
+                      color: AppColors.border,
+                      child: const Icon(
+                        Icons.broken_image_outlined,
+                        color: AppColors.mutedText,
+                        size: 22,
+                      ),
+                    ),
+                  ),
+                );
+              },
+            ),
+          ),
+        ],
+      ],
     );
   }
 }

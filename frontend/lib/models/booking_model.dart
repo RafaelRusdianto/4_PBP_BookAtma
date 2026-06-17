@@ -23,6 +23,9 @@ class BookingModel {
   int totalHargaServer;
   int nightsServer;
 
+  // ID pembayaran dari server, digunakan untuk submit review.
+  int idPembayaran;
+
   BookingModel({
     required this.hotel,
     required this.room,
@@ -40,6 +43,7 @@ class BookingModel {
     this.airportPickup = false,
     this.totalHargaServer = 0,
     this.nightsServer = 0,
+    this.idPembayaran = 0,
   });
 
   factory BookingModel.fromJson(Map<String, dynamic> json) {
@@ -71,6 +75,13 @@ class BookingModel {
 
     final idBooking = json['id_booking'];
 
+    // Ambil id_pembayaran dari relasi pembayaran
+    int idPembayaran = 0;
+    final pembayaranData = json['pembayaran'];
+    if (pembayaranData is Map) {
+      idPembayaran = HotelModel.parseInt(pembayaranData['id_pembayaran']);
+    }
+
     return BookingModel(
       hotel: HotelModel.fromJson(hotelJson),
       room: RoomModel.fromJson(roomJson),
@@ -90,6 +101,7 @@ class BookingModel {
       airportPickup: (json['airport_pickup'] == 1 || json['airport_pickup'] == true),
       totalHargaServer: HotelModel.parseInt(json['total_harga']),
       nightsServer: nightsServer,
+      idPembayaran: idPembayaran,
     );
   }
 
