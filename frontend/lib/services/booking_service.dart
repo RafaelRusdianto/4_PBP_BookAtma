@@ -112,7 +112,7 @@ class BookingService {
       if (serverData is Map) {
         final idBooking = serverData['id_booking'];
         if (idBooking != null) {
-          booking.bookingCode = 'BA-$idBooking';
+          booking.bookingCode = idBooking.toString();
           booking.itineraryId = idBooking.toString();
         }
       }

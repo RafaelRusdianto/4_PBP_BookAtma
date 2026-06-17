@@ -35,7 +35,7 @@ class BookingModel {
     this.specialRequest = '',
     this.note = '',
     this.paymentMethod = '',
-    this.bookingCode = 'BA-9822104',
+    this.bookingCode = '',
     this.itineraryId = '1092837465',
     this.status = 'Menunggu Pembayaran',
     this.breakfast = false,
@@ -92,7 +92,7 @@ class BookingModel {
       note: (json['note'] ?? '').toString(),
       paymentMethod: (json['payment_method'] ?? json['paymentMethod'] ?? '').toString(),
       bookingCode: idBooking != null
-          ? 'BA-$idBooking'
+          ? idBooking.toString()
           : (json['booking_code'] ?? json['bookingCode'] ?? '').toString(),
       itineraryId: (json['itinerary_id'] ?? json['itineraryId'] ?? idBooking ?? '').toString(),
       status: (json['status'] ?? '').toString(),
