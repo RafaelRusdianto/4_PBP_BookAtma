@@ -71,8 +71,7 @@ class _ExperienceSettingsPageState extends State<ExperienceSettingsPage> {
                     DropdownMenuItem(
                       value: 'Bahasa Indonesia',
                       child: Text('Bahasa Indonesia'),
-                    ),
-                    DropdownMenuItem(value: 'English', child: Text('English')),
+                    ),           
                   ],
                   onChanged: (value) {
                     setState(() {

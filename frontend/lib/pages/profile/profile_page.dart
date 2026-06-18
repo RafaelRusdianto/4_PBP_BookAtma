@@ -227,30 +227,10 @@ class _ProfilePageState extends State<ProfilePage> {
     );
   }
 
-  void _showHelpDialog() {
-    showDialog<void>(
-      context: context,
-      builder: (context) {
-        return AlertDialog(
-          shape: RoundedRectangleBorder(
-            borderRadius: BorderRadius.circular(20),
-          ),
-          title: const Text('Bantuan'),
-          content: const Text(
-            'Butuh bantuan? Hubungi layanan pelanggan di:\n\n'
-            'Email: cs@bookatma.com\n'
-            'Telepon: 0804-1-500-303\n\n'
-            'Atau kunjungi pengaturan untuk menyesuaikan pengalaman Anda.',
-          ),
-          actions: [
-            TextButton(
-              onPressed: () => Navigator.of(context).pop(),
-              child: const Text('Tutup'),
-            ),
-          ],
-        );
-      },
-    );
+  void _openHelpCenter() {
+    Navigator.of(
+      context,
+    ).push(MaterialPageRoute(builder: (_) => const _HelpCenterPage()));
   }
 
   void _showLogoutConfirmation() {
@@ -413,6 +393,9 @@ class _ProfilePageState extends State<ProfilePage> {
                       isEditing: _isEditing,
                       onBack: () => setState(() => _isEditing = false),
                       onChangePhoto: _showPhotoOptions,
+                      onNotificationTap: () => Navigator.of(
+                        context,
+                      ).pushNamed(AppRoutes.notification),
                     ),
                     AnimatedSwitcher(
                       duration: const Duration(milliseconds: 220),
@@ -493,7 +476,7 @@ class _ProfilePageState extends State<ProfilePage> {
             iconColor: AppColors.success,
             iconBackground: const Color(0xFFE8FFF3),
             title: 'Bantuan',
-            onTap: _showHelpDialog,
+            onTap: _openHelpCenter,
           ),
           const SizedBox(height: 16),
           _ProfileMenuTile(
@@ -518,7 +501,7 @@ class _ProfilePageState extends State<ProfilePage> {
       child: Column(
         children: [
           Transform.translate(
-            offset: const Offset(0, -20),
+            offset: const Offset(0, 8),
             child: Container(
               padding: const EdgeInsets.fromLTRB(20, 18, 20, 22),
               decoration: BoxDecoration(
@@ -571,7 +554,7 @@ class _ProfilePageState extends State<ProfilePage> {
               ),
             ),
           ),
-          const SizedBox(height: 18),
+          const SizedBox(height: 38),
           Padding(
             padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
             child: PrimaryButton(
@@ -593,6 +576,7 @@ class _ProfileHeader extends StatelessWidget {
     required this.isEditing,
     required this.onBack,
     required this.onChangePhoto,
+    required this.onNotificationTap,
   });
 
   final Widget avatar;
@@ -601,6 +585,7 @@ class _ProfileHeader extends StatelessWidget {
   final bool isEditing;
   final VoidCallback onBack;
   final VoidCallback onChangePhoto;
+  final VoidCallback onNotificationTap;
 
   @override
   Widget build(BuildContext context) {
@@ -649,34 +634,37 @@ class _ProfileHeader extends StatelessWidget {
                 ),
                 Align(
                   alignment: Alignment.centerRight,
-                  child: Container(
-                    width: 34,
-                    height: 34,
-                    decoration: BoxDecoration(
-                      color: Colors.white.withValues(alpha: 0.14),
-                      shape: BoxShape.circle,
-                    ),
-                    child: Stack(
-                      alignment: Alignment.center,
-                      children: [
-                        const Icon(
-                          Icons.notifications_none,
-                          color: Colors.white,
-                          size: 19,
-                        ),
-                        Positioned(
-                          right: 10,
-                          top: 9,
-                          child: Container(
-                            width: 7,
-                            height: 7,
-                            decoration: const BoxDecoration(
-                              color: AppColors.danger,
-                              shape: BoxShape.circle,
+                  child: GestureDetector(
+                    onTap: onNotificationTap,
+                    child: Container(
+                      width: 34,
+                      height: 34,
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.14),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          const Icon(
+                            Icons.notifications_none,
+                            color: Colors.white,
+                            size: 19,
+                          ),
+                          Positioned(
+                            right: 10,
+                            top: 9,
+                            child: Container(
+                              width: 7,
+                              height: 7,
+                              decoration: const BoxDecoration(
+                                color: AppColors.danger,
+                                shape: BoxShape.circle,
+                              ),
                             ),
                           ),
-                        ),
-                      ],
+                        ],
+                      ),
                     ),
                   ),
                 ),
@@ -892,6 +880,325 @@ class _ProfileTextField extends StatelessWidget {
         ),
       ),
       validator: validator,
+    );
+  }
+}
+
+class _HelpCenterPage extends StatelessWidget {
+  const _HelpCenterPage();
+
+  static const _faqItems = [
+    'Bagaimana cara membatalkan pesanan?',
+    'Metode pembayaran apa saja yang tersedia?',
+    'Bisakah saya merubah tanggal menginap?',
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: AppColors.surface,
+      body: SafeArea(
+        child: Column(
+          children: [
+            Expanded(
+              child: ListView(
+                padding: const EdgeInsets.fromLTRB(22, 18, 22, 24),
+                children: [
+                  Row(
+                    children: [
+                      IconButton(
+                        onPressed: () => Navigator.of(context).pop(),
+                        icon: const Icon(
+                          Icons.arrow_back,
+                          color: AppColors.bodyText,
+                          size: 22,
+                        ),
+                        padding: EdgeInsets.zero,
+                        constraints: const BoxConstraints.tightFor(
+                          width: 36,
+                          height: 36,
+                        ),
+                      ),
+                      const SizedBox(width: 10),
+                      const Text(
+                        'Pusat Bantuan',
+                        style: TextStyle(
+                          color: AppColors.bodyText,
+                          fontSize: 20,
+                          fontWeight: FontWeight.w900,
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 22),
+                  const _HelpSearchField(),
+                  const SizedBox(height: 22),
+                  Row(
+                    children: [
+                      const Expanded(
+                        child: Text(
+                          'Sering Ditanyakan',
+                          style: TextStyle(
+                            color: AppColors.bodyText,
+                            fontSize: 18,
+                            fontWeight: FontWeight.w900,
+                          ),
+                        ),
+                      ),
+                      TextButton(
+                        onPressed: () {},
+                        style: TextButton.styleFrom(
+                          foregroundColor: AppColors.primary,
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          minimumSize: const Size(0, 34),
+                        ),
+                        child: const Text(
+                          'Lihat Semua',
+                          style: TextStyle(
+                            fontSize: 12,
+                            fontWeight: FontWeight.w800,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                  const SizedBox(height: 10),
+                  ..._faqItems.map(
+                    (item) => Padding(
+                      padding: const EdgeInsets.only(bottom: 12),
+                      child: _FaqTile(title: item),
+                    ),
+                  ),
+                  const SizedBox(height: 10),
+                  const _NeedHelpCard(),
+                ],
+              ),
+            ),
+            const _HelpBottomNav(),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _HelpSearchField extends StatelessWidget {
+  const _HelpSearchField();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 54,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: const Row(
+        children: [
+          Icon(Icons.search, color: AppColors.mutedText, size: 22),
+          SizedBox(width: 12),
+          Expanded(
+            child: Text(
+              'Cari pertanyaan atau bantuan',
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: TextStyle(
+                color: AppColors.mutedText,
+                fontSize: 14,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _FaqTile extends StatelessWidget {
+  const _FaqTile({required this.title});
+
+  final String title;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 50,
+      padding: const EdgeInsets.symmetric(horizontal: 16),
+      decoration: BoxDecoration(
+        color: AppColors.surface,
+        borderRadius: BorderRadius.circular(10),
+        border: Border.all(color: AppColors.border),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Text(
+              title,
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
+              style: const TextStyle(
+                color: AppColors.bodyText,
+                fontSize: 12,
+                fontWeight: FontWeight.w800,
+              ),
+            ),
+          ),
+          const Icon(Icons.chevron_right, color: AppColors.mutedText, size: 21),
+        ],
+      ),
+    );
+  }
+}
+
+class _NeedHelpCard extends StatelessWidget {
+  const _NeedHelpCard();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 24, 20, 18),
+      decoration: BoxDecoration(
+        color: const Color(0xFFF4F8FF),
+        borderRadius: BorderRadius.circular(14),
+        border: Border.all(color: const Color(0xFFD7E5FF)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          const Text(
+            'Masih butuh bantuan?',
+            style: TextStyle(
+              color: AppColors.bodyText,
+              fontSize: 18,
+              fontWeight: FontWeight.w900,
+            ),
+          ),
+          const SizedBox(height: 10),
+          const Text(
+            'Tim dukungan kami siap membantumu 24/7 melalui layanan live chat atau email.',
+            style: TextStyle(
+              color: AppColors.mutedText,
+              fontSize: 13,
+              height: 1.45,
+              fontWeight: FontWeight.w600,
+            ),
+          ),
+          const SizedBox(height: 20),
+          SizedBox(
+            height: 54,
+            child: ElevatedButton.icon(
+              onPressed: () {},
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+                elevation: 0,
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              icon: const Icon(Icons.chat_bubble_outline, size: 19),
+              label: const Text(
+                'Hubungi Live Chat',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
+              ),
+            ),
+          ),
+          const SizedBox(height: 12),
+          SizedBox(
+            height: 54,
+            child: OutlinedButton.icon(
+              onPressed: () {},
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.bodyText,
+                backgroundColor: AppColors.surface,
+                side: const BorderSide(color: AppColors.border),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10),
+                ),
+              ),
+              icon: const Icon(Icons.mail_outline, size: 19),
+              label: const Text(
+                'Kirim Email',
+                style: TextStyle(fontSize: 15, fontWeight: FontWeight.w900),
+              ),
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _HelpBottomNav extends StatelessWidget {
+  const _HelpBottomNav();
+
+  static const _items = [
+    (Icons.home_filled, 'Beranda'),
+    (Icons.explore_outlined, 'Pencarian'),
+    (Icons.receipt_long_outlined, 'Pesanan'),
+  ];
+
+  @override
+  Widget build(BuildContext context) {
+    return SafeArea(
+      top: false,
+      child: Padding(
+        padding: const EdgeInsets.fromLTRB(22, 6, 22, 14),
+        child: Container(
+          height: 64,
+          padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 8),
+          decoration: BoxDecoration(
+            color: AppColors.surface,
+            borderRadius: BorderRadius.circular(28),
+            border: Border.all(color: AppColors.border.withValues(alpha: 0.45)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.08),
+                blurRadius: 18,
+                offset: const Offset(0, 8),
+              ),
+            ],
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              for (final item in _items)
+                SizedBox(
+                  width: 44,
+                  height: 40,
+                  child: Icon(item.$1, color: AppColors.mutedText, size: 20),
+                ),
+              Container(
+                width: 102,
+                height: 40,
+                decoration: BoxDecoration(
+                  color: AppColors.primary,
+                  borderRadius: BorderRadius.circular(22),
+                ),
+                child: const Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.person_outline, color: Colors.white, size: 17),
+                    SizedBox(width: 7),
+                    Text(
+                      'Saya',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w800,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }
