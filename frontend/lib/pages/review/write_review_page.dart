@@ -92,12 +92,6 @@ class _WriteReviewPageState extends State<WriteReviewPage> {
 
   Future<void> _submitReview() async {
     if (_isSubmitting) return;
-    if (_selectedPhotos.isEmpty) {
-      setState(() {
-        _errorMessage = 'Minimal 1 foto harus diupload';
-      });
-      return;
-    }
 
     setState(() => _isSubmitting = true);
 
@@ -112,9 +106,7 @@ class _WriteReviewPageState extends State<WriteReviewPage> {
     if (result['success'] != true) {
       setState(() => _isSubmitting = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result['message'] ?? 'Gagal mengirim ulasan'),
-        ),
+        SnackBar(content: Text(result['message'] ?? 'Gagal mengirim ulasan')),
       );
       return;
     }
@@ -192,17 +184,22 @@ class _WriteReviewPageState extends State<WriteReviewPage> {
                       width: 64,
                       height: 64,
                       color: AppColors.softBlue,
-                      child: booking.hotel.imageUrl != null &&
+                      child:
+                          booking.hotel.imageUrl != null &&
                               booking.hotel.imageUrl!.isNotEmpty
                           ? Image.network(
                               booking.hotel.imageUrl!,
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) =>
-                                  const Icon(Icons.hotel_outlined,
-                                      color: AppColors.mutedText),
+                                  const Icon(
+                                    Icons.hotel_outlined,
+                                    color: AppColors.mutedText,
+                                  ),
                             )
-                          : const Icon(Icons.hotel_outlined,
-                              color: AppColors.mutedText),
+                          : const Icon(
+                              Icons.hotel_outlined,
+                              color: AppColors.mutedText,
+                            ),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -481,9 +478,8 @@ class _WriteReviewPageState extends State<WriteReviewPage> {
 
                   // Red text rules
                   Text(
-                    '* Minimal 1 foto, maksimal 5 foto\n'
-                    '* Format: JPG, JPEG, PNG, GIF, atau WebP\n'
-                    '* Ukuran maksimal 5 MB per foto',
+                    '* Maksimal 5 foto\n'
+                    '* Format: JPG, JPEG, PNG, GIF, atau WebP\n',
                     style: TextStyle(
                       color: AppColors.danger.withValues(alpha: 0.85),
                       fontSize: 11,
@@ -550,8 +546,18 @@ class _WriteReviewPageState extends State<WriteReviewPage> {
   String _shortDate(DateTime? date) {
     if (date == null) return '-';
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-      'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'Mei',
+      'Jun',
+      'Jul',
+      'Agu',
+      'Sep',
+      'Okt',
+      'Nov',
+      'Des',
     ];
     return '${date.day} ${months[date.month - 1]} ${date.year}';
   }

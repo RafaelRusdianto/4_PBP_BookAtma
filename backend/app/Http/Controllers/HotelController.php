@@ -11,6 +11,9 @@ class HotelController extends Controller
     {
         $hotel = Hotel::with(['foto'])->get();
 
+        // Selalu hitung ulang & simpan rata-rata rating terbaru tiap hotel.
+        $hotel->each(fn ($item) => $item->recalculateAvgRating());
+
         return response()->json([
             'message' => 'Data hotel berhasil diambil',
             'data' => $hotel
@@ -31,6 +34,9 @@ class HotelController extends Controller
                 'message' => 'Hotel tidak ditemukan'
             ], 404);
         }
+
+        // Selalu hitung ulang & simpan rata-rata rating terbaru hotel ini.
+        $hotel->recalculateAvgRating();
 
         return response()->json([
             'message' => 'Detail hotel berhasil diambil',
