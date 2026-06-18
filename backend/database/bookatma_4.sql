@@ -303,7 +303,24 @@ INSERT INTO `hotel_foto` (`id_hotel_foto`, `id_hotel`, `url_foto`, `created_at`,
 (104, 103, 'hotels/semarang-city-inn-1.jpg', '2026-05-29 13:53:08', '2026-05-29 13:53:08'),
 (105, 104, 'hotels/bandung-hill-resort-1.jpg', '2026-05-29 13:53:08', '2026-05-29 13:53:08'),
 (106, 105, 'hotels/bali-sunset-villa-1.jpg', '2026-05-29 13:53:08', '2026-05-29 13:53:08'),
-(107, 106, 'hotels/jakarta-business-hotel-1.jpg', '2026-05-29 13:53:08', '2026-05-29 13:53:08');
+(107, 106, 'hotels/jakarta-business-hotel-1.jpg', '2026-05-29 13:53:08', '2026-05-29 13:53:08'),
+(108, 101, 'hotels/atma-stay-malioboro-3.jpg', '2026-05-29 13:53:08', '2026-05-29 13:53:08'),
+(109, 101, 'hotels/atma-stay-malioboro-4.jpg', '2026-05-29 13:53:08', '2026-05-29 13:53:08'),
+(110, 102, 'hotels/jogja-heritage-2.jpg', '2026-05-29 13:53:08', '2026-05-29 13:53:08'),
+(111, 102, 'hotels/jogja-heritage-3.jpg', '2026-05-29 13:53:08', '2026-05-29 13:53:08'),
+(112, 102, 'hotels/jogja-heritage-4.jpg', '2026-05-29 13:53:08', '2026-05-29 13:53:08'),
+(113, 103, 'hotels/semarang-city-inn-2.jpg', '2026-05-29 13:53:08', '2026-05-29 13:53:08'),
+(114, 103, 'hotels/semarang-city-inn-3.jpg', '2026-05-29 13:53:08', '2026-05-29 13:53:08'),
+(115, 103, 'hotels/semarang-city-inn-4.jpg', '2026-05-29 13:53:08', '2026-05-29 13:53:08'),
+(116, 104, 'hotels/bandung-hill-resort-2.jpg', '2026-05-29 13:53:08', '2026-05-29 13:53:08'),
+(117, 104, 'hotels/bandung-hill-resort-3.jpg', '2026-05-29 13:53:08', '2026-05-29 13:53:08'),
+(118, 104, 'hotels/bandung-hill-resort-4.jpg', '2026-05-29 13:53:08', '2026-05-29 13:53:08'),
+(119, 105, 'hotels/bali-sunset-villa-2.jpg', '2026-05-29 13:53:08', '2026-05-29 13:53:08'),
+(120, 105, 'hotels/bali-sunset-villa-3.jpg', '2026-05-29 13:53:08', '2026-05-29 13:53:08'),
+(121, 105, 'hotels/bali-sunset-villa-4.jpg', '2026-05-29 13:53:08', '2026-05-29 13:53:08'),
+(122, 106, 'hotels/jakarta-business-hotel-2.jpg', '2026-05-29 13:53:08', '2026-05-29 13:53:08'),
+(123, 106, 'hotels/jakarta-business-hotel-3.jpg', '2026-05-29 13:53:08', '2026-05-29 13:53:08'),
+(124, 106, 'hotels/jakarta-business-hotel-4.jpg', '2026-05-29 13:53:08', '2026-05-29 13:53:08');
 
 -- --------------------------------------------------------
 
@@ -864,7 +881,7 @@ ALTER TABLE `hotel`
 -- AUTO_INCREMENT for table `hotel_foto`
 --
 ALTER TABLE `hotel_foto`
-  MODIFY `id_hotel_foto` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=108;
+  MODIFY `id_hotel_foto` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=125;
 
 --
 -- AUTO_INCREMENT for table `jobs`
