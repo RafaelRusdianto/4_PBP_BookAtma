@@ -36,4 +36,21 @@ class Hotel extends Model
     {
         return $this->hasMany(Review::class, 'id_hotel');
     }
+
+    // Hitung ulang rata-rata rating dari semua review user pada hotel ini lalu
+    // simpan ke kolom avg_rating. Bila belum ada review, simpan 0.
+    // Selalu menyimpan nilai terbaru dan mengembalikannya.
+    public function recalculateAvgRating(): float
+    {
+        $avg = (float) $this->review()->avg('rating');
+        $avg = round($avg, 1);
+
+        // Hindari query UPDATE bila nilainya tidak berubah.
+        if ((float) $this->avg_rating !== $avg) {
+            $this->avg_rating = $avg;
+            $this->save();
+        }
+
+        return $avg;
+    }
 }
