@@ -6,7 +6,6 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Storage;
-use Laravel\Socialite\Facades\Socialite;
 
 class UserController extends Controller
 {
@@ -64,12 +63,19 @@ class UserController extends Controller
             'id_token' => 'required|string'
         ]);
 
-        // Verifikasi ID token dari Google melalui Socialite
+        // Verifikasi ID token dari Google secara kriptografis
         try {
-            $googleUser = Socialite::driver('google')->userFromToken($request->id_token);
+            $client = new \Google\Client(['client_id' => config('services.google.client_id')]);
+            $payload = $client->verifyIdToken($request->id_token);
+
+            if (!$payload) {
+                return response()->json([
+                    'message' => 'Token Google tidak valid atau telah kedaluwarsa'
+                ], 401);
+            }
 
             // Pastikan email dari Google cocok dengan email yang dikirim
-            if ($googleUser->getEmail() !== $request->email) {
+            if (($payload['email'] ?? '') !== $request->email) {
                 return response()->json([
                     'message' => 'Email tidak valid: token Google tidak sesuai'
                 ], 401);
