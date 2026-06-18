@@ -8,7 +8,6 @@ import '../../core/routes/app_routes.dart';
 import '../../core/theme/app_colors.dart';
 import '../../services/auth_service.dart';
 import '../../widgets/primary_button.dart';
-import '../../widgets/setting_tile.dart';
 
 class ProfilePage extends StatefulWidget {
   const ProfilePage({super.key});
@@ -27,6 +26,7 @@ class _ProfilePageState extends State<ProfilePage> {
   String? _avatarUrl;
   bool _isSaving = false;
   bool _isLoading = true;
+  bool _isEditing = false;
 
   @override
   void initState() {
@@ -82,13 +82,13 @@ class _ProfilePageState extends State<ProfilePage> {
       });
     } catch (_) {
       if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Gagal memilih foto.')),
-      );
+      ScaffoldMessenger.of(
+        context,
+      ).showSnackBar(const SnackBar(content: Text('Gagal memilih foto.')));
     }
   }
 
-void _showPhotoOptions() {
+  void _showPhotoOptions() {
     showModalBottomSheet<void>(
       context: context,
       backgroundColor: Colors.transparent,
@@ -232,12 +232,14 @@ void _showPhotoOptions() {
       context: context,
       builder: (context) {
         return AlertDialog(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+          ),
           title: const Text('Bantuan'),
           content: const Text(
-            'Butuh bantuan? Hubungi layanan pelanggan di:\n\n' 
-            'Email: cs@bookatma.com\n' 
-            'Telepon: 0804-1-500-303\n\n' 
+            'Butuh bantuan? Hubungi layanan pelanggan di:\n\n'
+            'Email: cs@bookatma.com\n'
+            'Telepon: 0804-1-500-303\n\n'
             'Atau kunjungi pengaturan untuk menyesuaikan pengalaman Anda.',
           ),
           actions: [
@@ -283,11 +285,7 @@ void _showPhotoOptions() {
                   shape: BoxShape.circle,
                 ),
                 child: const Center(
-                  child: Icon(
-                    Icons.logout,
-                    color: AppColors.primary,
-                    size: 30,
-                  ),
+                  child: Icon(Icons.logout, color: AppColors.primary, size: 30),
                 ),
               ),
               const SizedBox(height: 18),
@@ -303,7 +301,11 @@ void _showPhotoOptions() {
               const Text(
                 'Apakah Anda yakin ingin keluar? Sesi Anda akan berakhir.',
                 textAlign: TextAlign.center,
-                style: TextStyle(fontSize: 14, color: AppColors.mutedText, height: 1.5),
+                style: TextStyle(
+                  fontSize: 14,
+                  color: AppColors.mutedText,
+                  height: 1.5,
+                ),
               ),
               const SizedBox(height: 24),
               SizedBox(
@@ -380,6 +382,7 @@ void _showPhotoOptions() {
         // Pakai foto terbaru dari server, hentikan preview file lokal.
         _avatarUrl = _resolveFotoUrl(result['data']['foto_profil']);
         _avatarFile = null;
+        _isEditing = false;
       }
     });
 
@@ -394,185 +397,501 @@ void _showPhotoOptions() {
 
   @override
   Widget build(BuildContext context) {
-    final Widget avatar;
-    if (_avatarFile != null) {
-      avatar = ClipOval(
-        child: Image.file(_avatarFile!, width: 110, height: 110, fit: BoxFit.cover),
-      );
-    } else if (_avatarUrl != null) {
-      avatar = ClipOval(
-        child: Image.network(
-          _avatarUrl!,
-          width: 110,
-          height: 110,
-          fit: BoxFit.cover,
-          errorBuilder: (_, _, _) => const CircleAvatar(
-            radius: 55,
-            backgroundColor: AppColors.softBlue,
-            child: Icon(Icons.person, size: 52, color: AppColors.primary),
-          ),
-        ),
-      );
-    } else {
-      avatar = const CircleAvatar(
-        radius: 55,
-        backgroundColor: AppColors.softBlue,
-        child: Icon(Icons.person, size: 52, color: AppColors.primary),
-      );
-    }
-
     return Scaffold(
-      backgroundColor: AppColors.background,
+      backgroundColor: AppColors.surface,
       body: _isLoading
           ? const Center(child: CircularProgressIndicator())
           : SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.only(bottom: 24),
-          child: Column(
-            children: [
-              Container(
-                width: double.infinity,
-                decoration: const BoxDecoration(
-                  color: AppColors.primary,
-                  borderRadius: BorderRadius.vertical(bottom: Radius.circular(28)),
-                ),
-                padding: const EdgeInsets.only(top: 24, bottom: 30),
+              child: SingleChildScrollView(
+                padding: EdgeInsets.only(bottom: _isEditing ? 34 : 18),
                 child: Column(
                   children: [
-                    const Text(
-                      'Profil Saya',
-                      style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.w700),
+                    _ProfileHeader(
+                      avatar: _buildAvatar(_isEditing ? 96 : 110),
+                      name: _nameController.text,
+                      email: _emailController.text,
+                      isEditing: _isEditing,
+                      onBack: () => setState(() => _isEditing = false),
+                      onChangePhoto: _showPhotoOptions,
                     ),
-                    const SizedBox(height: 24),
-                    Stack(
-                      alignment: Alignment.bottomRight,
+                    AnimatedSwitcher(
+                      duration: const Duration(milliseconds: 220),
+                      child: _isEditing
+                          ? _buildEditContent()
+                          : _buildProfileContent(),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+    );
+  }
+
+  Widget _buildAvatar(double size) {
+    if (_avatarFile != null) {
+      return ClipOval(
+        child: Image.file(
+          _avatarFile!,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+        ),
+      );
+    }
+
+    if (_avatarUrl != null) {
+      return ClipOval(
+        child: Image.network(
+          _avatarUrl!,
+          width: size,
+          height: size,
+          fit: BoxFit.cover,
+          errorBuilder: (_, _, _) => CircleAvatar(
+            radius: size / 2,
+            backgroundColor: AppColors.softBlue,
+            child: Icon(
+              Icons.person,
+              size: size * 0.48,
+              color: AppColors.primary,
+            ),
+          ),
+        ),
+      );
+    }
+
+    return CircleAvatar(
+      radius: size / 2,
+      backgroundColor: AppColors.softBlue,
+      child: Icon(Icons.person, size: size * 0.48, color: AppColors.primary),
+    );
+  }
+
+  Widget _buildProfileContent() {
+    return Padding(
+      key: const ValueKey('profile-menu'),
+      padding: const EdgeInsets.fromLTRB(22, 26, 22, 10),
+      child: Column(
+        children: [
+          _ProfileMenuTile(
+            icon: Icons.person_outline,
+            iconColor: AppColors.primary,
+            iconBackground: AppColors.softBlue,
+            title: 'Edit Profil',
+            onTap: () => setState(() => _isEditing = true),
+          ),
+          const SizedBox(height: 16),
+          _ProfileMenuTile(
+            icon: Icons.settings_outlined,
+            iconColor: const Color(0xFF7C6BFF),
+            iconBackground: const Color(0xFFEDEBFF),
+            title: 'Pengaturan',
+            onTap: () => Navigator.of(context).pushNamed(AppRoutes.settings),
+          ),
+          const SizedBox(height: 16),
+          _ProfileMenuTile(
+            icon: Icons.help_outline,
+            iconColor: AppColors.success,
+            iconBackground: const Color(0xFFE8FFF3),
+            title: 'Bantuan',
+            onTap: _showHelpDialog,
+          ),
+          const SizedBox(height: 16),
+          _ProfileMenuTile(
+            icon: Icons.logout_outlined,
+            iconColor: AppColors.danger,
+            iconBackground: const Color(0xFFFFECEC),
+            title: 'Keluar Akun',
+            titleColor: AppColors.danger,
+            backgroundColor: const Color(0xFFFFF1F1),
+            showChevron: false,
+            onTap: _showLogoutConfirmation,
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildEditContent() {
+    return Padding(
+      key: const ValueKey('edit-form'),
+      padding: const EdgeInsets.fromLTRB(34, 0, 34, 0),
+      child: Column(
+        children: [
+          Transform.translate(
+            offset: const Offset(0, -20),
+            child: Container(
+              padding: const EdgeInsets.fromLTRB(20, 18, 20, 22),
+              decoration: BoxDecoration(
+                color: AppColors.surface,
+                borderRadius: BorderRadius.circular(12),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.14),
+                    blurRadius: 28,
+                    offset: const Offset(0, 14),
+                  ),
+                ],
+              ),
+              child: Form(
+                key: _formKey,
+                child: Column(
+                  children: [
+                    _ProfileTextField(
+                      controller: _nameController,
+                      label: 'Nama Lengkap',
+                      validator: (value) =>
+                          value?.isEmpty == true ? 'Nama harus diisi' : null,
+                    ),
+                    const SizedBox(height: 16),
+                    _ProfileTextField(
+                      controller: _emailController,
+                      label: 'Email',
+                      keyboardType: TextInputType.emailAddress,
+                      validator: (value) {
+                        if (value == null || value.isEmpty) {
+                          return 'Email harus diisi';
+                        }
+                        if (!value.contains('@')) {
+                          return 'Email tidak valid';
+                        }
+                        return null;
+                      },
+                    ),
+                    const SizedBox(height: 16),
+                    _ProfileTextField(
+                      controller: _phoneController,
+                      label: 'Nomor Telepon',
+                      keyboardType: TextInputType.phone,
+                      prefixText: '+62  ',
+                      validator: (value) =>
+                          value?.isEmpty == true ? 'Nomor harus diisi' : null,
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+          const SizedBox(height: 18),
+          Padding(
+            padding: const EdgeInsets.fromLTRB(18, 0, 18, 18),
+            child: PrimaryButton(
+              label: _isSaving ? 'Menyimpan...' : 'Simpan Perubahan',
+              onPressed: _isSaving ? null : _saveProfile,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProfileHeader extends StatelessWidget {
+  const _ProfileHeader({
+    required this.avatar,
+    required this.name,
+    required this.email,
+    required this.isEditing,
+    required this.onBack,
+    required this.onChangePhoto,
+  });
+
+  final Widget avatar;
+  final String name;
+  final String email;
+  final bool isEditing;
+  final VoidCallback onBack;
+  final VoidCallback onChangePhoto;
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: double.infinity,
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF0876E7), Color(0xFF3F7CFF)],
+        ),
+        borderRadius: BorderRadius.vertical(bottom: Radius.circular(32)),
+      ),
+      padding: EdgeInsets.fromLTRB(24, isEditing ? 14 : 22, 24, 28),
+      child: Column(
+        children: [
+          SizedBox(
+            height: 36,
+            child: Stack(
+              alignment: Alignment.center,
+              children: [
+                if (isEditing)
+                  Align(
+                    alignment: Alignment.centerLeft,
+                    child: IconButton(
+                      onPressed: onBack,
+                      icon: const Icon(
+                        Icons.arrow_back_ios_new,
+                        color: Colors.white,
+                        size: 18,
+                      ),
+                      padding: EdgeInsets.zero,
+                      constraints: const BoxConstraints.tightFor(
+                        width: 36,
+                        height: 36,
+                      ),
+                    ),
+                  ),
+                const Text(
+                  'Profil Saya',
+                  style: TextStyle(
+                    color: Colors.white,
+                    fontSize: 16,
+                    fontWeight: FontWeight.w800,
+                  ),
+                ),
+                Align(
+                  alignment: Alignment.centerRight,
+                  child: Container(
+                    width: 34,
+                    height: 34,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withValues(alpha: 0.14),
+                      shape: BoxShape.circle,
+                    ),
+                    child: Stack(
+                      alignment: Alignment.center,
                       children: [
-                        avatar,
+                        const Icon(
+                          Icons.notifications_none,
+                          color: Colors.white,
+                          size: 19,
+                        ),
                         Positioned(
-                          right: 0,
-                          bottom: 0,
-                          child: GestureDetector(
-                            onTap: _showPhotoOptions,
-                            child: Container(
-                              width: 38,
-                              height: 38,
-                              decoration: const BoxDecoration(
-                                color: AppColors.surface,
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(Icons.camera_alt_outlined, size: 20, color: AppColors.primary),
+                          right: 10,
+                          top: 9,
+                          child: Container(
+                            width: 7,
+                            height: 7,
+                            decoration: const BoxDecoration(
+                              color: AppColors.danger,
+                              shape: BoxShape.circle,
                             ),
                           ),
                         ),
                       ],
                     ),
-                    const SizedBox(height: 14),
-                    Text(
-                      _nameController.text,
-                      style: const TextStyle(color: Colors.white, fontSize: 18, fontWeight: FontWeight.w700),
-                    ),
-                    const SizedBox(height: 4),
-                    Text(
-                      _emailController.text,
-                      style: const TextStyle(color: Colors.white70, fontSize: 13),
-                    ),
-                  ],
+                  ),
                 ),
+              ],
+            ),
+          ),
+          SizedBox(height: isEditing ? 10 : 18),
+          Stack(
+            alignment: Alignment.bottomRight,
+            children: [
+              Container(
+                width: isEditing ? 104 : 118,
+                height: isEditing ? 104 : 118,
+                padding: const EdgeInsets.all(4),
+                decoration: BoxDecoration(
+                  color: const Color(0xFFFFE6A7),
+                  shape: BoxShape.circle,
+                  border: Border.all(color: Colors.white, width: 3),
+                ),
+                child: avatar,
               ),
-              const SizedBox(height: 20),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Card(
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(22)),
-                  elevation: 0,
-                  child: Padding(
-                    padding: const EdgeInsets.all(20),
-                    child: Form(
-                      key: _formKey,
-                      child: Column(
-                        crossAxisAlignment: CrossAxisAlignment.stretch,
-                        children: [
-                          TextFormField(
-                            controller: _nameController,
-                            decoration: const InputDecoration(
-                              labelText: 'Nama Lengkap',
-                            ),
-                            validator: (value) => value?.isEmpty == true ? 'Nama harus diisi' : null,
-                          ),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            controller: _emailController,
-                            decoration: const InputDecoration(
-                              labelText: 'Email',
-                            ),
-                            keyboardType: TextInputType.emailAddress,
-                            validator: (value) {
-                              if (value == null || value.isEmpty) {
-                                return 'Email harus diisi';
-                              }
-                              if (!value.contains('@')) {
-                                return 'Email tidak valid';
-                              }
-                              return null;
-                            },
-                          ),
-                          const SizedBox(height: 16),
-                          TextFormField(
-                            controller: _phoneController,
-                            decoration: const InputDecoration(
-                              labelText: 'Nomor Telepon',
-                            ),
-                            keyboardType: TextInputType.phone,
-                            validator: (value) => value?.isEmpty == true ? 'Nomor harus diisi' : null,
-                          ),
-                          const SizedBox(height: 24),
-                          PrimaryButton(
-                            label: _isSaving ? 'Menyimpan...' : 'Simpan Perubahan',
-                            onPressed: _isSaving ? null : _saveProfile,
-                          ),
-                        ],
+              if (isEditing)
+                Positioned(
+                  right: 2,
+                  bottom: 2,
+                  child: GestureDetector(
+                    onTap: onChangePhoto,
+                    child: Container(
+                      width: 30,
+                      height: 30,
+                      decoration: const BoxDecoration(
+                        color: AppColors.surface,
+                        shape: BoxShape.circle,
+                      ),
+                      child: const Icon(
+                        Icons.camera_alt_outlined,
+                        color: AppColors.primary,
+                        size: 16,
                       ),
                     ),
                   ),
                 ),
+            ],
+          ),
+          const SizedBox(height: 11),
+          Text(
+            name.isEmpty ? 'Pengguna' : name,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: Colors.white,
+              fontSize: isEditing ? 18 : 20,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
+          const SizedBox(height: 3),
+          Text(
+            email.isEmpty ? '-' : email,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              color: Colors.white.withValues(alpha: 0.82),
+              fontSize: 12,
+              fontWeight: FontWeight.w500,
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _ProfileMenuTile extends StatelessWidget {
+  const _ProfileMenuTile({
+    required this.icon,
+    required this.iconColor,
+    required this.iconBackground,
+    required this.title,
+    this.titleColor = AppColors.bodyText,
+    this.backgroundColor = AppColors.surface,
+    this.showChevron = true,
+    this.onTap,
+  });
+
+  final IconData icon;
+  final Color iconColor;
+  final Color iconBackground;
+  final String title;
+  final Color titleColor;
+  final Color backgroundColor;
+  final bool showChevron;
+  final VoidCallback? onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(12),
+        child: Container(
+          height: 70,
+          padding: const EdgeInsets.symmetric(horizontal: 18),
+          decoration: BoxDecoration(
+            color: backgroundColor,
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: AppColors.border.withValues(alpha: 0.7)),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: 0.03),
+                blurRadius: 14,
+                offset: const Offset(0, 8),
               ),
-              const SizedBox(height: 22),
-              Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20),
-                child: Column(
-                  children: [
-                    SettingTile(
-                      icon: Icons.settings_outlined,
-                      title: 'Pengaturan',
-                      subtitle: 'Kelola preferensi aplikasi',
-                      trailing: const Icon(Icons.chevron_right, color: AppColors.mutedText),
-                      onTap: () {
-                        Navigator.of(context).pushNamed(AppRoutes.settings);
-                      },
-                    ),
-                    const SizedBox(height: 14),
-                    SettingTile(
-                      icon: Icons.help_outline,
-                      title: 'Bantuan',
-                      subtitle: 'Informasi dan dukungan',
-                      trailing: const Icon(Icons.chevron_right, color: AppColors.mutedText),
-                      onTap: _showHelpDialog,
-                    ),
-                    const SizedBox(height: 14),
-                    SettingTile(
-                      icon: Icons.logout_outlined,
-                      title: 'Keluar Akun',
-                      subtitle: 'Sesi Anda akan berakhir',
-                      trailing: const Icon(Icons.chevron_right, color: AppColors.mutedText),
-                      onTap: _showLogoutConfirmation,
-                    ),
-                  ],
+            ],
+          ),
+          child: Row(
+            children: [
+              Container(
+                width: 32,
+                height: 32,
+                decoration: BoxDecoration(
+                  color: iconBackground,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Icon(icon, color: iconColor, size: 18),
+              ),
+              const SizedBox(width: 18),
+              Expanded(
+                child: Text(
+                  title,
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                  style: TextStyle(
+                    color: titleColor,
+                    fontSize: 14,
+                    fontWeight: FontWeight.w800,
+                  ),
                 ),
               ),
+              if (showChevron)
+                const Icon(
+                  Icons.chevron_right,
+                  color: AppColors.border,
+                  size: 22,
+                ),
             ],
           ),
         ),
       ),
+    );
+  }
+}
+
+class _ProfileTextField extends StatelessWidget {
+  const _ProfileTextField({
+    required this.controller,
+    required this.label,
+    this.keyboardType,
+    this.prefixText,
+    this.validator,
+  });
+
+  final TextEditingController controller;
+  final String label;
+  final TextInputType? keyboardType;
+  final String? prefixText;
+  final String? Function(String?)? validator;
+
+  @override
+  Widget build(BuildContext context) {
+    return TextFormField(
+      controller: controller,
+      keyboardType: keyboardType,
+      style: const TextStyle(
+        color: AppColors.bodyText,
+        fontSize: 13,
+        fontWeight: FontWeight.w600,
+      ),
+      decoration: InputDecoration(
+        labelText: label,
+        labelStyle: const TextStyle(
+          color: AppColors.mutedText,
+          fontSize: 12,
+          fontWeight: FontWeight.w600,
+        ),
+        contentPadding: const EdgeInsets.symmetric(
+          horizontal: 14,
+          vertical: 13,
+        ),
+        prefixText: prefixText,
+        prefixStyle: const TextStyle(
+          color: AppColors.mutedText,
+          fontSize: 13,
+          fontWeight: FontWeight.w700,
+        ),
+        filled: true,
+        fillColor: AppColors.surface,
+        enabledBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(9),
+          borderSide: const BorderSide(color: AppColors.border),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(9),
+          borderSide: const BorderSide(color: AppColors.primary, width: 1.2),
+        ),
+        errorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(9),
+          borderSide: const BorderSide(color: AppColors.danger),
+        ),
+        focusedErrorBorder: OutlineInputBorder(
+          borderRadius: BorderRadius.circular(9),
+          borderSide: const BorderSide(color: AppColors.danger, width: 1.2),
+        ),
+      ),
+      validator: validator,
     );
   }
 }
