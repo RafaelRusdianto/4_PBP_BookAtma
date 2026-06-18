@@ -38,12 +38,7 @@ return [
     'google' => [
         'client_id' => env('GOOGLE_CLIENT_ID'),
         'client_secret' => env('GOOGLE_CLIENT_SECRET'),
-        'redirect' => env('GOOGLE_REDIRECT_URI', 'http://localhost:8000/api/auth/google/callback'),
-
-        // Development only: skip SSL verification (Windows PHP sering kekurangan CA bundle)
-        'guzzle' => [
-            'verify' => false,
-        ],
+        'redirect' => env('GOOGLE_REDIRECT_URI'),
     ],
 
 ];
