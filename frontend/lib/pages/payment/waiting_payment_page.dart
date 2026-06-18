@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import '../../constants/app_colors.dart';
 import '../../core/format_helper.dart';
 import '../../services/booking_service.dart';
+import '../../widgets/success_dialog.dart';
 
 class WaitingPaymentPage extends StatefulWidget {
   const WaitingPaymentPage({super.key});
@@ -238,9 +239,22 @@ class _WaitingPaymentPageState extends State<WaitingPaymentPage> {
                         });
 
                         if (result['success'] == true) {
-                          Navigator.pushReplacementNamed(
-                            context,
-                            '/voucher',
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (dialogContext) => SuccessDialog(
+                              title: 'Pembayaran Berhasil!',
+                              message:
+                                  'Pesananmu telah dibayar dan dikonfirmasi. Voucher kamu siap digunakan.',
+                              buttonLabel: 'Lihat Voucher',
+                              onStart: () {
+                                Navigator.pop(dialogContext); // tutup popup
+                                Navigator.pushReplacementNamed(
+                                  context,
+                                  '/voucher',
+                                );
+                              },
+                            ),
                           );
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(

@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../constants/app_colors.dart';
 import '../../models/booking_model.dart';
 import '../../services/review_service.dart';
+import '../../widgets/success_dialog.dart';
 
 class WriteReviewPage extends StatefulWidget {
   final BookingModel booking;
@@ -140,10 +141,22 @@ class _WriteReviewPageState extends State<WriteReviewPage> {
 
     setState(() => _isSubmitting = false);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Ulasan berhasil dikirim')),
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => SuccessDialog(
+        title: 'Ulasan Berhasil Dikirim!',
+        message:
+            'Terima kasih atas ulasanmu. Masukanmu sangat membantu pengguna lain.',
+        buttonLabel: 'Selesai',
+        onStart: () {
+          Navigator.pop(dialogContext); // tutup popup
+          Navigator.pop(context, true); // kembali ke halaman sebelumnya
+        },
+      ),
     );
-    Navigator.pop(context, true);
   }
 
   @override
