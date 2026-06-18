@@ -4,6 +4,7 @@ import 'package:http/http.dart' as http;
 
 import '../config/api_config.dart';
 import '../models/hotel_model.dart';
+import 'review_service.dart';
 
 class HotelService {
   Future<List<HotelModel>> getHotels({int? limit}) {
@@ -43,7 +44,36 @@ class HotelService {
 
     final selectedHotels = limit == null ? hotels : hotels.take(limit).toList();
 
-    return Future.wait(selectedHotels.map(_fetchDetailOrFallback));
+    // _fetchDetailOrFallback sudah menerapkan rating dari review asli.
+    final enriched = await Future.wait(selectedHotels.map(_fetchDetailOrFallback));
+
+    // Urutkan ulang berdasarkan rating asli dari review.
+    enriched.sort((a, b) => b.rating.compareTo(a.rating));
+
+    return enriched;
+  }
+
+  // Hitung avg_rating dari rata-rata rating review hotel yang sesungguhnya.
+  static Future<HotelModel> _applyReviewRating(HotelModel hotel) async {
+    if (hotel.idHotel <= 0) return hotel;
+
+    try {
+      final reviews = await ReviewService.getReviewsByHotel(hotel.idHotel);
+
+      // Hanya hitung review yang punya rating valid (> 0).
+      final ratings =
+          reviews.map((r) => r.rating).where((rating) => rating > 0).toList();
+
+      if (ratings.isEmpty) return hotel;
+
+      final average =
+          ratings.reduce((a, b) => a + b) / ratings.length;
+
+      return hotel.copyWith(avgRating: average);
+    } catch (_) {
+      // Bila gagal memuat review, pakai rating bawaan dari backend.
+      return hotel;
+    }
   }
 
   static Future<HotelModel> fetchHotelDetail(
@@ -67,16 +97,20 @@ class HotelService {
 
     final detail = HotelModel.fromJson(Map<String, dynamic>.from(data));
 
-    return baseHotel == null ? detail : _mergeHotel(baseHotel, detail);
+    final merged = baseHotel == null ? detail : _mergeHotel(baseHotel, detail);
+
+    return _applyReviewRating(merged);
   }
 
   static Future<HotelModel> _fetchDetailOrFallback(HotelModel hotel) async {
     if (hotel.idHotel <= 0) return hotel;
 
     try {
+      // fetchHotelDetail sudah menerapkan rating dari review.
       return await fetchHotelDetail(hotel.idHotel, baseHotel: hotel);
     } catch (_) {
-      return hotel;
+      // Detail gagal dimuat, tetap pakai rating review jika tersedia.
+      return _applyReviewRating(hotel);
     }
   }
 
