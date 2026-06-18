@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "506125730113",
+    "project_id": "bookatma-40b01",
+    "storage_bucket": "bookatma-40b01.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:506125730113:android:1066b787b035efb71021c0",
+        "android_client_info": {
+          "package_name": "com.example.frontend"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBMsc0TvkxBTwj9qkFvrVlU9A_lH31_Oks"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

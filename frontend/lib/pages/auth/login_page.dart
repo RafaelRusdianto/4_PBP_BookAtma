@@ -147,7 +147,19 @@ class _LoginPageState extends State<LoginPage> {
 
             const SizedBox(height: 20),
 
-            const GoogleButton(),
+            GoogleButton(
+              onSuccess: () {
+                Navigator.of(context).pushNamedAndRemoveUntil(
+                  AppRoutes.main,
+                  (route) => false,
+                );
+              },
+              onError: (message) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(message)),
+                );
+              },
+            ),
           ],
         ),
       ),
