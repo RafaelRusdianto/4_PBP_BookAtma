@@ -899,7 +899,6 @@ class _StaySummary extends StatelessWidget {
               ],
             ),
           ),
-          const Icon(Icons.chevron_right, color: AppColors.mutedText, size: 20),
         ],
       ),
     );
