@@ -104,6 +104,70 @@ class AuthService {
     }
   }
 
+  Future<Map<String, dynamic>> googleLogin({
+    required String email,
+    required String nama,
+    required String idToken,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/google-login'),
+
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+
+        body: jsonEncode({
+          'email': email,
+          'nama': nama,
+          'id_token': idToken,
+        }),
+      );
+
+      final data = _decodeObject(response.body);
+
+      if (response.statusCode == 200) {
+        final token = data['token'];
+
+        if (token is! String || token.isEmpty) {
+          return {
+            'success': false,
+            'message': 'Token login tidak ditemukan di response server',
+          };
+        }
+
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('token', token);
+
+        final namaUser = data['user']?['nama'];
+        if (namaUser is String && namaUser.isNotEmpty) {
+          await prefs.setString('nama', namaUser);
+        }
+
+        final idUser = data['user']?['id_user'];
+        if (idUser != null) {
+          await prefs.setInt('id_user', int.tryParse(idUser.toString()) ?? 0);
+        }
+
+        return {
+          'success': true,
+          'message': data['message'] ?? 'Login Google berhasil',
+        };
+      }
+
+      return {
+        'success': false,
+        'message': _errorMessage(data, fallback: 'Login Google gagal'),
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Tidak dapat terhubung ke server. Periksa backend dan URL API. (${e.toString()})',
+      };
+    }
+  }
+
   Future<void> logout() async {
     final prefs = await SharedPreferences.getInstance();
 

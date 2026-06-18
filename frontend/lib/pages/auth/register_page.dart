@@ -9,6 +9,8 @@ import '../../services/auth_service.dart';
 import '../../widgets/auth_scaffold.dart';
 import '../../widgets/auth_text_field.dart';
 import '../../widgets/back_circle_button.dart';
+import '../../widgets/divider_with_text.dart';
+import '../../widgets/google_button.dart';
 import '../../widgets/primary_button.dart';
 
 class RegisterPage extends StatefulWidget {
@@ -178,6 +180,27 @@ class _RegisterPageState extends State<RegisterPage> {
             const SizedBox(height: 22),
 
             PrimaryButton(label: 'Buat Akun', onPressed: _submit),
+
+            const SizedBox(height: 24),
+
+            const DividerWithText(text: 'atau'),
+
+            const SizedBox(height: 20),
+
+            GoogleButton(
+              label: 'Daftar dengan Google',
+              onSuccess: () {
+                Navigator.of(context).pushNamedAndRemoveUntil(
+                  AppRoutes.main,
+                  (route) => false,
+                );
+              },
+              onError: (message) {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(content: Text(message)),
+                );
+              },
+            ),
           ],
         ),
       ),

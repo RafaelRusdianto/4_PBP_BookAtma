@@ -20,6 +20,7 @@ class HotelController extends Controller
     public function show($id)
     {
         $hotel = Hotel::with([
+            'foto',
             'kamar.fasilitas',
             'kamar.foto',
             'review'
