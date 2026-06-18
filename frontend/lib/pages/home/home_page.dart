@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 
+import '../../config/api_config.dart';
 import '../../constants/app_colors.dart';
 import '../../models/hotel_model.dart';
 import '../../services/hotel_service.dart';
@@ -25,20 +26,38 @@ class _HomePageState extends State<HomePage> {
   DateTime? checkOut;
   int guests = 2;
   String userName = '';
+  String? avatarUrl;
   int notificationCount = 0;
 
   @override
   void initState() {
     super.initState();
     hotelsFuture = HotelService.fetchHotels(limit: 5);
-    _loadUserName();
+    _loadUserProfile();
     _loadNotificationCount();
   }
 
-  Future<void> _loadUserName() async {
-    final nama = await AuthService().getUserName();
+  // Ambil nama + foto profil user yang sedang login.
+  Future<void> _loadUserProfile() async {
+    final profile = await AuthService().getProfile();
     if (!mounted) return;
-    setState(() => userName = nama);
+
+    setState(() {
+      final nama = profile?['nama'];
+      if (nama is String && nama.isNotEmpty) userName = nama;
+      avatarUrl = _resolveFotoUrl(profile?['foto_profil']);
+    });
+  }
+
+  // Ubah path foto_profil dari backend menjadi URL lengkap yang bisa diakses.
+  String? _resolveFotoUrl(dynamic foto) {
+    final path = foto?.toString().trim();
+    if (path == null || path.isEmpty) return null;
+    if (path.startsWith('http')) return path;
+
+    final host = ApiConfig.baseUrl.replaceAll('/api', '');
+    final clean = path.startsWith('/') ? path.substring(1) : path;
+    return '$host/storage/$clean';
   }
 
   Future<void> _loadNotificationCount() async {
@@ -160,10 +179,16 @@ class _HomePageState extends State<HomePage> {
         children: [
           Row(
             children: [
-              const CircleAvatar(
+              CircleAvatar(
                 radius: 22,
                 backgroundColor: AppColors.white,
-                child: Icon(Icons.person, color: AppColors.primary),
+                backgroundImage:
+                    (avatarUrl != null && avatarUrl!.isNotEmpty)
+                        ? NetworkImage(avatarUrl!)
+                        : null,
+                child: (avatarUrl == null || avatarUrl!.isEmpty)
+                    ? const Icon(Icons.person, color: AppColors.primary)
+                    : null,
               ),
 
               const SizedBox(width: 12),
