@@ -28,6 +28,7 @@ class WriteReviewPage extends StatefulWidget {
 
 class _WriteReviewPageState extends State<WriteReviewPage> {
   late final TextEditingController _reviewController;
+  late int _rating;
   bool _isSubmitting = false;
   final List<File> _selectedPhotos = [];
   final ImagePicker _picker = ImagePicker();
@@ -37,6 +38,7 @@ class _WriteReviewPageState extends State<WriteReviewPage> {
   void initState() {
     super.initState();
     _reviewController = TextEditingController(text: widget.existingKeterangan);
+    _rating = widget.rating;
   }
 
   @override
@@ -95,9 +97,10 @@ class _WriteReviewPageState extends State<WriteReviewPage> {
 
     setState(() => _isSubmitting = true);
 
-    // 1. Update keterangan
-    final result = await ReviewService.updateKeterangan(
+    // 1. Update rating + keterangan sekaligus
+    final result = await ReviewService.updateReview(
       idReview: widget.idReview,
+      rating: _rating,
       keterangan: _reviewController.text.trim(),
     );
 
@@ -268,21 +271,25 @@ class _WriteReviewPageState extends State<WriteReviewPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(5, (index) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        child: Icon(
-                          index < widget.rating
-                              ? Icons.star
-                              : Icons.star_border,
-                          color: AppColors.accent,
-                          size: 36,
+                      final star = index + 1;
+                      return GestureDetector(
+                        onTap: _isSubmitting
+                            ? null
+                            : () => setState(() => _rating = star),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: Icon(
+                            star <= _rating ? Icons.star : Icons.star_border,
+                            color: AppColors.accent,
+                            size: 36,
+                          ),
                         ),
                       );
                     }),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    '${widget.rating}/5',
+                    '$_rating/5',
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,

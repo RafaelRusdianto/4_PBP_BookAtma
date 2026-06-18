@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\Hotel;
 use App\Models\Review;
 use App\Models\ReviewFoto;
 use Illuminate\Http\Request;
@@ -146,6 +147,77 @@ class ReviewController extends Controller
             'message' => 'Ulasan berhasil diperbarui',
             'data' => $review
         ], 200);
+    }
+
+    // Edit review: ubah rating dan/atau keterangan sekaligus.
+    public function update(Request $request, $id)
+    {
+        $request->validate([
+            'rating' => 'sometimes|required|integer|min:1|max:5',
+            'keterangan' => 'nullable|string'
+        ]);
+
+        $review = Review::find($id);
+
+        if (!$review) {
+            return response()->json([
+                'message' => 'Review tidak ditemukan'
+            ], 404);
+        }
+
+        if ($request->filled('rating')) {
+            $review->rating = $request->rating;
+        }
+
+        // keterangan boleh dikosongkan, jadi cek key-nya bukan filled().
+        if ($request->has('keterangan')) {
+            $review->keterangan = $request->keterangan;
+        }
+
+        $review->save();
+
+        // Rating mungkin berubah, hitung ulang rata-rata hotel.
+        $this->recalcHotelAvg($review->id_hotel);
+
+        return response()->json([
+            'message' => 'Review berhasil diperbarui',
+            'data' => $review
+        ], 200);
+    }
+
+    // Hapus review beserta semua fotonya, lalu hitung ulang rata-rata hotel.
+    public function destroy($id)
+    {
+        $review = Review::with('foto')->find($id);
+
+        if (!$review) {
+            return response()->json([
+                'message' => 'Review tidak ditemukan'
+            ], 404);
+        }
+
+        $idHotel = $review->id_hotel;
+
+        // Hapus file foto dari storage lalu record-nya.
+        foreach ($review->foto as $foto) {
+            Storage::disk('public')->delete($foto->url_foto);
+            $foto->delete();
+        }
+
+        $review->delete();
+
+        $this->recalcHotelAvg($idHotel);
+
+        return response()->json([
+            'message' => 'Review berhasil dihapus'
+        ], 200);
+    }
+
+    // Hitung ulang & simpan avg_rating hotel dari semua review tersisa.
+    private function recalcHotelAvg($idHotel): void
+    {
+        $hotel = Hotel::find($idHotel);
+        $hotel?->recalculateAvgRating();
     }
 
     public function byPembayaran($id_pembayaran)

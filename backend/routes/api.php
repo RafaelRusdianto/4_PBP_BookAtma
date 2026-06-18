@@ -26,6 +26,8 @@ Route::put('/review/{id}/keterangan', [ReviewController::class, 'updateKeteranga
 Route::get('/review/pembayaran/{id_pembayaran}', [ReviewController::class, 'byPembayaran']);
 Route::post('/review/{id}/upload-foto', [ReviewController::class, 'uploadFoto']);
 Route::delete('/review/foto/{id_foto}', [ReviewController::class, 'hapusFoto']);
+Route::put('/review/{id}', [ReviewController::class, 'update']);
+Route::delete('/review/{id}', [ReviewController::class, 'destroy']);
 
 Route::post('/register', [UserController::class, 'register']);
 Route::post('/login', [UserController::class, 'login']);

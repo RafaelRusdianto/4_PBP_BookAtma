@@ -990,7 +990,11 @@ class _OrderReviewSectionState extends State<_OrderReviewSection> {
 
         return _ReviewPanel(
           title: 'Review Anda',
-          child: _SubmittedReview(review: review!),
+          child: _SubmittedReview(
+            review: review!,
+            booking: widget.booking,
+            onChanged: _reloadReview,
+          ),
         );
       },
     );
@@ -1137,13 +1141,83 @@ class _ReviewStarInputState extends State<_ReviewStarInput> {
   }
 }
 
-class _SubmittedReview extends StatelessWidget {
-  const _SubmittedReview({required this.review});
+class _SubmittedReview extends StatefulWidget {
+  const _SubmittedReview({
+    required this.review,
+    required this.booking,
+    required this.onChanged,
+  });
 
   final ReviewModel review;
+  final BookingModel booking;
+  final VoidCallback onChanged;
+
+  @override
+  State<_SubmittedReview> createState() => _SubmittedReviewState();
+}
+
+class _SubmittedReviewState extends State<_SubmittedReview> {
+  bool _isDeleting = false;
+
+  Future<void> _editReview() async {
+    final submitted = await Navigator.push<bool>(
+      context,
+      MaterialPageRoute(
+        builder: (_) => WriteReviewPage(
+          booking: widget.booking,
+          rating: widget.review.rating,
+          idReview: widget.review.idReview,
+          existingKeterangan: widget.review.keterangan ?? '',
+        ),
+      ),
+    );
+
+    if (submitted == true) widget.onChanged();
+  }
+
+  Future<void> _deleteReview() async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Hapus Review'),
+        content: const Text(
+          'Yakin ingin menghapus review ini? Tindakan ini tidak dapat dibatalkan.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Batal'),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            style: TextButton.styleFrom(foregroundColor: AppColors.danger),
+            child: const Text('Hapus'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed != true) return;
+
+    setState(() => _isDeleting = true);
+
+    final result = await ReviewService.deleteReview(widget.review.idReview);
+
+    if (!mounted) return;
+    setState(() => _isDeleting = false);
+
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(
+        content: Text(result['message'] ?? 'Gagal menghapus review'),
+      ),
+    );
+
+    if (result['success'] == true) widget.onChanged();
+  }
 
   @override
   Widget build(BuildContext context) {
+    final review = widget.review;
     final reviewText = review.keterangan?.trim();
     final photoUrls = review.foto
         .map((foto) => foto.resolvedUrl)
@@ -1221,6 +1295,57 @@ class _SubmittedReview extends StatelessWidget {
             ),
           ),
         ],
+        const SizedBox(height: 14),
+        Row(
+          children: [
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: _isDeleting ? null : _editReview,
+                icon: const Icon(Icons.edit_outlined, size: 16),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.primary,
+                  side: const BorderSide(color: AppColors.primary),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                label: const Text(
+                  'Edit',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+                ),
+              ),
+            ),
+            const SizedBox(width: 10),
+            Expanded(
+              child: OutlinedButton.icon(
+                onPressed: _isDeleting ? null : _deleteReview,
+                icon: _isDeleting
+                    ? const SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          color: AppColors.danger,
+                        ),
+                      )
+                    : const Icon(Icons.delete_outline, size: 16),
+                style: OutlinedButton.styleFrom(
+                  foregroundColor: AppColors.danger,
+                  side: const BorderSide(color: AppColors.danger),
+                  padding: const EdgeInsets.symmetric(vertical: 10),
+                  shape: RoundedRectangleBorder(
+                    borderRadius: BorderRadius.circular(10),
+                  ),
+                ),
+                label: const Text(
+                  'Hapus',
+                  style: TextStyle(fontSize: 12, fontWeight: FontWeight.w800),
+                ),
+              ),
+            ),
+          ],
+        ),
       ],
     );
   }
