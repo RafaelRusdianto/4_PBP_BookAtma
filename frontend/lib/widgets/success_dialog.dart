@@ -4,9 +4,19 @@ import '../core/theme/app_colors.dart';
 import 'primary_button.dart';
 
 class SuccessDialog extends StatelessWidget {
-  const SuccessDialog({required this.onStart, super.key});
+  const SuccessDialog({
+    required this.onStart,
+    this.title = 'Akun Anda Sudah Siap!',
+    this.message =
+        'Selamat bergabung! Akun Anda telah berhasil dibuat dan dikonfigurasi.',
+    this.buttonLabel = 'Ayo Mulai!',
+    super.key,
+  });
 
   final VoidCallback onStart;
+  final String title;
+  final String message;
+  final String buttonLabel;
 
   @override
   Widget build(BuildContext context) {
@@ -32,27 +42,27 @@ class SuccessDialog extends StatelessWidget {
               ),
             ),
             const SizedBox(height: 24),
-            const Text(
-              'Akun Anda Sudah Siap!',
+            Text(
+              title,
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 color: AppColors.bodyText,
                 fontSize: 20,
                 fontWeight: FontWeight.w800,
               ),
             ),
             const SizedBox(height: 10),
-            const Text(
-              'Selamat bergabung! Akun Anda telah berhasil dibuat dan dikonfigurasi.',
+            Text(
+              message,
               textAlign: TextAlign.center,
-              style: TextStyle(
+              style: const TextStyle(
                 color: AppColors.mutedText,
                 fontSize: 13,
                 height: 1.5,
               ),
             ),
             const SizedBox(height: 24),
-            PrimaryButton(label: 'Ayo Mulai!', onPressed: onStart),
+            PrimaryButton(label: buttonLabel, onPressed: onStart),
           ],
         ),
       ),

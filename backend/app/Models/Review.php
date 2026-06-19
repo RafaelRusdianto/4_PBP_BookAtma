@@ -25,4 +25,9 @@ class Review extends Model
     {
         return $this->belongsTo(Hotel::class, 'id_hotel');
     }
+
+    public function foto()
+    {
+        return $this->hasMany(ReviewFoto::class, 'id_review');
+    }
 }

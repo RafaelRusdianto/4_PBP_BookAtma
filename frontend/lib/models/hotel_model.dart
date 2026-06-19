@@ -147,12 +147,19 @@ class HotelModel {
 
     final uri = Uri.tryParse(url);
 
+    // Jika URL sudah lengkap (punya scheme), gunakan langsung
     if (uri != null && uri.hasScheme) return url;
 
-    final apiUri = Uri.parse(ApiConfig.baseUrl);
-    final path = url.startsWith('/') ? url : '/$url';
+    final cleanPath = url.startsWith('/') ? url.substring(1) : url;
 
-    return '${apiUri.scheme}://${apiUri.authority}$path';
+    // Foto hotel & kamar sudah diupload ke Supabase Storage
+    if (cleanPath.startsWith('hotels/') || cleanPath.startsWith('rooms/')) {
+      return '${ApiConfig.supabaseStorageUrl}/$cleanPath';
+    }
+
+    // Fallback: Railway storage (untuk foto lain seperti review)
+    final apiUri = Uri.parse(ApiConfig.baseUrl);
+    return '${apiUri.scheme}://${apiUri.authority}/storage/$cleanPath';
   }
 
   static String? _firstOrNull(List<String> values) {

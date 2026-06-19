@@ -1,8 +1,12 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 
 import '../../constants/app_colors.dart';
 import '../../core/format_helper.dart';
 import '../../services/booking_service.dart';
+import '../../widgets/success_dialog.dart';
 
 class WaitingPaymentPage extends StatefulWidget {
   const WaitingPaymentPage({super.key});
@@ -13,6 +17,158 @@ class WaitingPaymentPage extends StatefulWidget {
 
 class _WaitingPaymentPageState extends State<WaitingPaymentPage> {
   bool isLoading = false;
+  int _remainingSeconds = 600; // 10 menit = 600 detik
+  Timer? _timer;
+
+  @override
+  void initState() {
+    super.initState();
+    _startTimer();
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    super.dispose();
+  }
+
+  void _startTimer() {
+    _timer?.cancel();
+    _timer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (_remainingSeconds > 0) {
+        setState(() {
+          _remainingSeconds--;
+        });
+      } else {
+        timer.cancel();
+      }
+    });
+  }
+
+  String _formatTime(int seconds) {
+    final menit = seconds ~/ 60;
+    final detik = seconds % 60;
+    return '${menit.toString().padLeft(2, '0')}:${detik.toString().padLeft(2, '0')}';
+  }
+
+  List<Widget> _paymentInstructions(String method) {
+    switch (method) {
+      case 'BCA Virtual Account':
+        return [
+          const _HowToPay(
+            title: 'ATM BCA',
+            steps:
+                '1. Masukkan kartu ATM BCA dan PIN\n'
+                '2. Pilih menu "Transaksi Lainnya"\n'
+                '3. Pilih menu "Transfer"\n'
+                '4. Pilih "Ke Rekening BCA Virtual Account"\n'
+                '5. Masukkan nomor Virtual Account: 8092 2796 3501\n'
+                '6. Ikuti instruksi hingga selesai',
+          ),
+          const _HowToPay(
+            title: 'm-BCA (BCA Mobile)',
+            steps:
+                '1. Buka aplikasi BCA Mobile dan login\n'
+                '2. Pilih menu "m-Transfer"\n'
+                '3. Pilih "BCA Virtual Account"\n'
+                '4. Masukkan nomor Virtual Account: 8092 2796 3501\n'
+                '5. Konfirmasi dan masukkan PIN\n'
+                '6. Pembayaran selesai',
+          ),
+          const _HowToPay(
+            title: 'Internet Banking BCA (KlikBCA)',
+            steps:
+                '1. Login ke KlikBCA (klikbca.com)\n'
+                '2. Pilih menu "Transfer Dana"\n'
+                '3. Pilih "Transfer ke BCA Virtual Account"\n'
+                '4. Masukkan nomor Virtual Account: 8092 2796 3501\n'
+                '5. Masukkan jumlah pembayaran yang sesuai\n'
+                '6. Konfirmasi dan masukkan Respon Key Appli\n'
+                '7. Pembayaran selesai',
+          ),
+        ];
+      case 'Mandiri Virtual Account':
+        return [
+          const _HowToPay(
+            title: 'ATM Mandiri',
+            steps:
+                '1. Masukkan kartu ATM Mandiri dan PIN\n'
+                '2. Pilih menu "Bayar/Beli"\n'
+                '3. Pilih "Multipayment"\n'
+                '4. Cari dan pilih "Mandiri Virtual Account"\n'
+                '5. Masukkan nomor Virtual Account: 8092 2796 3501\n'
+                '6. Konfirmasi pembayaran',
+          ),
+          const _HowToPay(
+            title: 'Livin by Mandiri',
+            steps:
+                '1. Buka aplikasi Livin by Mandiri\n'
+                '2. Pilih menu "Pembayaran"\n'
+                '3. Pilih "Virtual Account"\n'
+                '4. Masukkan nomor Virtual Account: 8092 2796 3501\n'
+                '5. Masukkan nominal pembayaran\n'
+                '6. Konfirmasi dan masukkan PIN\n'
+                '7. Pembayaran selesai',
+          ),
+        ];
+      case 'GoPay':
+        return [
+          const _HowToPay(
+            title: 'Aplikasi Gojek',
+            steps:
+                '1. Buka aplikasi Gojek\n'
+                '2. Pilih menu "GoPay"\n'
+                '3. Pilih "Bayar" atau "Top Up"\n'
+                '4. Pilih "Pembayaran Merchant"\n'
+                '5. Scan QR Code yang ditampilkan\n'
+                '6. Masukkan jumlah pembayaran\n'
+                '7. Konfirmasi dan masukkan PIN GoPay\n'
+                '8. Pembayaran berhasil',
+          ),
+          const _HowToPay(
+            title: 'GoPay via QRIS',
+            steps:
+                '1. Buka aplikasi Gojek\n'
+                '2. Tap ikon "QR" di halaman utama\n'
+                '3. Scan QR Code pembayaran\n'
+                '4. Masukkan nominal pembayaran\n'
+                '5. Tap "Bayar" dan masukkan PIN\n'
+                '6. Pembayaran berhasil',
+          ),
+        ];
+      case 'DANA':
+        return [
+          const _HowToPay(
+            title: 'Aplikasi DANA',
+            steps:
+                '1. Buka aplikasi DANA\n'
+                '2. Pilih menu "Bayar"\n'
+                '3. Pilih "Scan QR"\n'
+                '4. Scan QR Code yang ditampilkan\n'
+                '5. Masukkan jumlah pembayaran\n'
+                '6. Konfirmasi dan masukkan PIN DANA\n'
+                '7. Pembayaran berhasil',
+          ),
+          const _HowToPay(
+            title: 'DANA via QRIS',
+            steps:
+                '1. Buka aplikasi DANA\n'
+                '2. Tap ikon "QR" di halaman utama\n'
+                '3. Scan QR Code pembayaran\n'
+                '4. Masukkan nominal pembayaran\n'
+                '5. Tap "Bayar" dan masukkan PIN\n'
+                '6. Pembayaran berhasil',
+          ),
+        ];
+      default:
+        return [
+          const _HowToPay(
+            title: 'ATM / Mobile Banking',
+            steps: 'Silakan lakukan pembayaran melalui ATM atau Mobile Banking ke nomor Virtual Account yang tertera di atas.',
+          ),
+        ];
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -69,6 +225,9 @@ class _WaitingPaymentPageState extends State<WaitingPaymentPage> {
                           isLoading = true;
                         });
 
+                        // Minimal jeda 1.5 detik agar loading terlihat
+                        await Future.delayed(const Duration(milliseconds: 1500));
+
                         final result = await BookingService.submitBooking();
 
                         if (!context.mounted) {
@@ -80,9 +239,22 @@ class _WaitingPaymentPageState extends State<WaitingPaymentPage> {
                         });
 
                         if (result['success'] == true) {
-                          Navigator.pushReplacementNamed(
-                            context,
-                            '/voucher',
+                          showDialog(
+                            context: context,
+                            barrierDismissible: false,
+                            builder: (dialogContext) => SuccessDialog(
+                              title: 'Pembayaran Berhasil!',
+                              message:
+                                  'Pesananmu telah dibayar dan dikonfirmasi. Voucher kamu siap digunakan.',
+                              buttonLabel: 'Lihat Voucher',
+                              onStart: () {
+                                Navigator.pop(dialogContext); // tutup popup
+                                Navigator.pushReplacementNamed(
+                                  context,
+                                  '/voucher',
+                                );
+                              },
+                            ),
                           );
                         } else {
                           ScaffoldMessenger.of(context).showSnackBar(
@@ -132,17 +304,17 @@ class _WaitingPaymentPageState extends State<WaitingPaymentPage> {
                     const _StepProgress(activeStep: 2),
                     const SizedBox(height: 20),
                     Row(
-                      children: const [
-                        Icon(
+                      children: [
+                        const Icon(
                           Icons.timer_outlined,
                           color: Colors.orange,
                           size: 16,
                         ),
-                        SizedBox(width: 6),
+                        const SizedBox(width: 6),
                         Expanded(
                           child: Text(
-                            'Selesaikan dalam 23:59:59',
-                            style: TextStyle(
+                            'Selesaikan dalam ${_formatTime(_remainingSeconds)}',
+                            style: const TextStyle(
                               color: Colors.orange,
                               fontSize: 12,
                               fontWeight: FontWeight.w700,
@@ -150,9 +322,9 @@ class _WaitingPaymentPageState extends State<WaitingPaymentPage> {
                           ),
                         ),
                         Text(
-                          'ORDER ID\nBA-9822104',
+                          'ORDER ID\n${booking.bookingCode}',
                           textAlign: TextAlign.right,
-                          style: TextStyle(
+                          style: const TextStyle(
                             color: AppColors.textDisabled,
                             fontSize: 10,
                             fontWeight: FontWeight.w700,
@@ -176,8 +348,7 @@ class _WaitingPaymentPageState extends State<WaitingPaymentPage> {
                       ),
                     ),
                     const SizedBox(height: 10),
-                    const _HowToPay(title: 'ATM BCA'),
-                    const _HowToPay(title: 'm-BCA (BCA Mobile)'),
+                    ..._paymentInstructions(booking.paymentMethod),
                   ],
                 ),
               ),
@@ -350,20 +521,33 @@ class _VirtualAccountCard extends StatelessWidget {
                   letterSpacing: 1,
                 ),
               ),
-              Container(
-                padding: const EdgeInsets.symmetric(
-                  horizontal: 8,
-                  vertical: 4,
-                ),
-                decoration: BoxDecoration(
-                  color: AppColors.background,
-                  borderRadius: BorderRadius.circular(6),
-                ),
-                child: const Text(
-                  'SALIN',
-                  style: TextStyle(
-                    fontSize: 10,
-                    fontWeight: FontWeight.w900,
+              GestureDetector(
+                onTap: () {
+                  Clipboard.setData(
+                    const ClipboardData(text: '8092 2796 3501'),
+                  );
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(
+                      content: Text('Nomor Virtual Account berhasil disalin'),
+                      duration: Duration(seconds: 2),
+                    ),
+                  );
+                },
+                child: Container(
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
+                  decoration: BoxDecoration(
+                    color: AppColors.background,
+                    borderRadius: BorderRadius.circular(6),
+                  ),
+                  child: const Text(
+                    'SALIN',
+                    style: TextStyle(
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                    ),
                   ),
                 ),
               ),
@@ -384,38 +568,75 @@ class _VirtualAccountCard extends StatelessWidget {
   }
 }
 
-class _HowToPay extends StatelessWidget {
+class _HowToPay extends StatefulWidget {
   final String title;
+  final String steps;
 
   const _HowToPay({
     required this.title,
+    this.steps = '',
   });
+
+  @override
+  State<_HowToPay> createState() => _HowToPayState();
+}
+
+class _HowToPayState extends State<_HowToPay> {
+  bool isExpanded = false;
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 62,
       margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.symmetric(horizontal: 16),
       decoration: BoxDecoration(
         color: AppColors.white,
         borderRadius: BorderRadius.circular(12),
       ),
-      child: Row(
+      child: Column(
         children: [
-          Expanded(
-            child: Text(
-              title,
-              style: const TextStyle(
-                fontWeight: FontWeight.w800,
-                fontSize: 13,
+          InkWell(
+            borderRadius: BorderRadius.circular(12),
+            onTap: () {
+              setState(() {
+                isExpanded = !isExpanded;
+              });
+            },
+            child: Container(
+              padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 18),
+              child: Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      widget.title,
+                      style: const TextStyle(
+                        fontWeight: FontWeight.w800,
+                        fontSize: 13,
+                      ),
+                    ),
+                  ),
+                  Icon(
+                    isExpanded
+                        ? Icons.keyboard_arrow_up
+                        : Icons.keyboard_arrow_down,
+                    color: AppColors.textDisabled,
+                  ),
+                ],
               ),
             ),
           ),
-          const Icon(
-            Icons.keyboard_arrow_down,
-            color: AppColors.textDisabled,
-          ),
+          if (isExpanded && widget.steps.isNotEmpty)
+            Container(
+              width: double.infinity,
+              padding: const EdgeInsets.fromLTRB(16, 0, 16, 16),
+              child: Text(
+                widget.steps,
+                style: const TextStyle(
+                  fontSize: 12,
+                  color: AppColors.textDisabled,
+                  height: 1.6,
+                ),
+              ),
+            ),
         ],
       ),
     );

@@ -89,30 +89,104 @@ class AuthService {
         }),
       );
 
-      final data = jsonDecode(response.body);
-
-      print(response.statusCode);
-      print(response.body);
+      final data = _decodeObject(response.body);
 
       if (response.statusCode == 201) {
+        final token = data['token'];
+
+        if (token is! String || token.isEmpty) {
+          return {
+            'success': false,
+            'message': 'Token tidak ditemukan di response server',
+          };
+        }
+
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('token', token);
+
+        final namaUser = data['user']?['nama'];
+        if (namaUser is String && namaUser.isNotEmpty) {
+          await prefs.setString('nama', namaUser);
+        }
+
+        final idUser = data['user']?['id_user'];
+        if (idUser != null) {
+          await prefs.setInt('id_user', int.tryParse(idUser.toString()) ?? 0);
+        }
+
         return {'success': true, 'message': data['message']};
       } else {
-        String errorMessage = 'Register gagal';
-
-        if (data['message'] != null) {
-          errorMessage = data['message'];
-        }
-
-        if (data['errors'] != null) {
-          final errors = data['errors'] as Map<String, dynamic>;
-
-          errorMessage = errors.values.first[0];
-        }
-
-        return {'success': false, 'message': errorMessage};
+        return {
+          'success': false,
+          'message': _errorMessage(data, fallback: 'Register gagal'),
+        };
       }
     } catch (e) {
       return {'success': false, 'message': 'Tidak dapat terhubung ke server'};
+    }
+  }
+
+  Future<Map<String, dynamic>> googleLogin({
+    required String email,
+    required String nama,
+    required String idToken,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('${ApiConfig.baseUrl}/google-login'),
+
+        headers: {
+          'Accept': 'application/json',
+          'Content-Type': 'application/json',
+        },
+
+        body: jsonEncode({
+          'email': email,
+          'nama': nama,
+          'id_token': idToken,
+        }),
+      );
+
+      final data = _decodeObject(response.body);
+
+      if (response.statusCode == 200) {
+        final token = data['token'];
+
+        if (token is! String || token.isEmpty) {
+          return {
+            'success': false,
+            'message': 'Token login tidak ditemukan di response server',
+          };
+        }
+
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('token', token);
+
+        final namaUser = data['user']?['nama'];
+        if (namaUser is String && namaUser.isNotEmpty) {
+          await prefs.setString('nama', namaUser);
+        }
+
+        final idUser = data['user']?['id_user'];
+        if (idUser != null) {
+          await prefs.setInt('id_user', int.tryParse(idUser.toString()) ?? 0);
+        }
+
+        return {
+          'success': true,
+          'message': data['message'] ?? 'Login Google berhasil',
+        };
+      }
+
+      return {
+        'success': false,
+        'message': _errorMessage(data, fallback: 'Login Google gagal'),
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Tidak dapat terhubung ke server. Periksa backend dan URL API. (${e.toString()})',
+      };
     }
   }
 

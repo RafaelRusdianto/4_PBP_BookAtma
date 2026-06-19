@@ -25,9 +25,12 @@ class UserController extends Controller
             'no_hp' => $request->no_hp
         ]);
 
+        $token = $user->createToken('auth_token')->plainTextToken;
+
         return response()->json([
             'message' => 'Register berhasil',
-            'data' => $user
+            'user' => $user,
+            'token' => $token
         ], 201);
     }
 
@@ -59,8 +62,35 @@ class UserController extends Controller
     {
         $request->validate([
             'email' => 'required|email',
-            'nama' => 'required|string|max:100'
+            'nama' => 'required|string|max:100',
+            'id_token' => 'required|string'
         ]);
+
+        // Verifikasi ID token dari Google secara kriptografis
+        try {
+            $client = new \Google\Client(['client_id' => config('services.google.client_id')]);
+            $payload = $client->verifyIdToken($request->id_token);
+
+            if (!$payload) {
+                return response()->json([
+                    'message' => 'Token Google tidak valid atau telah kedaluwarsa'
+                ], 401);
+            }
+
+            // Pastikan email dari Google cocok dengan email yang dikirim
+            if (($payload['email'] ?? '') !== $request->email) {
+                return response()->json([
+                    'message' => 'Email tidak valid: token Google tidak sesuai'
+                ], 401);
+            }
+        } catch (\Exception $e) {
+            // Log error detail untuk debugging
+            logger()->error('Google login verification failed: ' . $e->getMessage());
+
+            return response()->json([
+                'message' => 'Token Google tidak valid atau telah kedaluwarsa'
+            ], 401);
+        }
 
         $user = User::where('email', $request->email)->first();
 

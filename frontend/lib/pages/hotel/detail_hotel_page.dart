@@ -1,10 +1,15 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
 
 import '../../constants/app_colors.dart';
 import '../../core/format_helper.dart';
 import '../../models/hotel_model.dart';
+import '../../models/review_model.dart';
 import '../../models/search_filter_model.dart';
 import '../../services/booking_service.dart';
+import '../../services/review_service.dart';
+import '../review/all_reviews_page.dart';
 
 class DetailHotelPageArguments {
   final HotelModel hotel;
@@ -22,6 +27,89 @@ class DetailHotelPage extends StatefulWidget {
 
 class _DetailHotelPageState extends State<DetailHotelPage> {
   int currentImage = 0;
+  int _totalImages = 1;
+  final PageController _pageController = PageController();
+  Timer? _autoSlideTimer;
+
+  // Data review
+  List<ReviewModel> _reviews = [];
+  bool _isLoadingReviews = true;
+
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _totalImages = _resolveHotel()?.imageUrls.length ?? 1;
+      _startAutoSlide();
+      _loadReviews();
+    });
+  }
+
+  @override
+  void dispose() {
+    _autoSlideTimer?.cancel();
+    _pageController.dispose();
+    super.dispose();
+  }
+
+  HotelModel? _resolveHotel() {
+    final args = ModalRoute.of(context)?.settings.arguments;
+    if (args is DetailHotelPageArguments) return args.hotel;
+    if (args is HotelModel) return args;
+    return null;
+  }
+
+  Future<void> _loadReviews() async {
+    final hotel = _resolveHotel();
+    if (hotel == null) return;
+
+    try {
+      final reviews = await ReviewService.getReviewsByHotel(hotel.idHotel);
+      if (mounted) {
+        setState(() {
+          _reviews = reviews;
+          _isLoadingReviews = false;
+        });
+      }
+    } catch (_) {
+      if (mounted) {
+        setState(() => _isLoadingReviews = false);
+      }
+    }
+  }
+
+  // Rating yang ditampilkan dihitung dari review yang benar-benar tampil di
+  // halaman ini, agar selalu konsisten dengan daftar review di bawah.
+  double _displayRating(HotelModel hotel) {
+    final ratings =
+        _reviews.map((r) => r.rating).where((rating) => rating > 0).toList();
+
+    if (ratings.isEmpty) return hotel.rating;
+
+    return ratings.reduce((a, b) => a + b) / ratings.length;
+  }
+
+  void _startAutoSlide() {
+    _autoSlideTimer?.cancel();
+    if (_totalImages <= 1) return;
+    _autoSlideTimer = Timer.periodic(const Duration(seconds: 4), (_) {
+      if (!_pageController.hasClients) return;
+      final nextPage = currentImage + 1;
+      if (nextPage < _totalImages) {
+        _pageController.animateToPage(
+          nextPage,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeInOut,
+        );
+      } else {
+        _pageController.animateToPage(
+          0,
+          duration: const Duration(milliseconds: 400),
+          curve: Curves.easeInOut,
+        );
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -66,17 +154,54 @@ class _DetailHotelPageState extends State<DetailHotelPage> {
                 child: Stack(
                   children: [
                     PageView.builder(
+                      controller: _pageController,
                       itemCount: selectedHotel.imageUrls.length,
                       onPageChanged: (index) {
                         setState(() {
                           currentImage = index;
                         });
+                        // Reset timer saat user geser manual
+                        _startAutoSlide();
                       },
                       itemBuilder: (context, index) {
                         return Image.network(
                           selectedHotel.imageUrls[index],
                           width: double.infinity,
                           fit: BoxFit.cover,
+                          loadingBuilder: (context, child, loadingProgress) {
+                            if (loadingProgress == null) return child;
+                            return Container(
+                              color: AppColors.softBlue,
+                              child: const Center(
+                                child: CircularProgressIndicator(
+                                  color: AppColors.primary,
+                                ),
+                              ),
+                            );
+                          },
+                          errorBuilder: (context, error, stackTrace) {
+                            return Container(
+                              color: AppColors.softBlue,
+                              child: const Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  Icon(
+                                    Icons.image_outlined,
+                                    color: AppColors.mutedText,
+                                    size: 48,
+                                  ),
+                                  SizedBox(height: 8),
+                                  Text(
+                                    'Foto tidak tersedia',
+                                    style: TextStyle(
+                                      color: AppColors.mutedText,
+                                      fontSize: 12,
+                                    ),
+                                  ),
+                                ],
+                              ),
+                            );
+                          },
                         );
                       },
                     ),
@@ -87,7 +212,9 @@ class _DetailHotelPageState extends State<DetailHotelPage> {
                         child: Row(
                           children: [
                             CircleAvatar(
-                              backgroundColor: Colors.black.withOpacity(0.35),
+                              backgroundColor: Colors.black.withValues(
+                                alpha: 0.35,
+                              ),
                               child: IconButton(
                                 icon: const Icon(
                                   Icons.arrow_back_ios_new,
@@ -119,7 +246,7 @@ class _DetailHotelPageState extends State<DetailHotelPage> {
                             decoration: BoxDecoration(
                               color: currentImage == index
                                   ? AppColors.white
-                                  : Colors.white.withOpacity(0.5),
+                                  : Colors.white.withValues(alpha: 0.5),
                               borderRadius: BorderRadius.circular(20),
                             ),
                           ),
@@ -154,42 +281,34 @@ class _DetailHotelPageState extends State<DetailHotelPage> {
                       ),
                       const SizedBox(height: 6),
 
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.star,
-                            color: AppColors.accent,
-                            size: 16,
-                          ),
-                          const Icon(
-                            Icons.star,
-                            color: AppColors.accent,
-                            size: 16,
-                          ),
-                          const Icon(
-                            Icons.star,
-                            color: AppColors.accent,
-                            size: 16,
-                          ),
-                          const Icon(
-                            Icons.star,
-                            color: AppColors.accent,
-                            size: 16,
-                          ),
-                          const Icon(
-                            Icons.star,
-                            color: AppColors.accent,
-                            size: 16,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            '(${selectedHotel.rating}/5)',
-                            style: const TextStyle(
-                              color: AppColors.textDisabled,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
+                      Builder(
+                        builder: (context) {
+                          final rating = _displayRating(selectedHotel);
+                          final rounded = rating.round();
+
+                          return Row(
+                            children: [
+                              ...List.generate(
+                                5,
+                                (index) => Icon(
+                                  index < rounded
+                                      ? Icons.star
+                                      : Icons.star_border,
+                                  color: AppColors.accent,
+                                  size: 16,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                '(${rating.toStringAsFixed(1)}/5)',
+                                style: const TextStyle(
+                                  color: AppColors.textDisabled,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          );
+                        },
                       ),
 
                       const SizedBox(height: 8),
@@ -247,7 +366,15 @@ class _DetailHotelPageState extends State<DetailHotelPage> {
                           ),
                           const Spacer(),
                           TextButton(
-                            onPressed: () {},
+                            onPressed: () {
+                              Navigator.push(
+                                context,
+                                MaterialPageRoute(
+                                  builder: (_) =>
+                                      AllReviewsPage(hotel: selectedHotel),
+                                ),
+                              );
+                            },
                             child: const Text(
                               'Lihat Semua',
                               style: TextStyle(
@@ -259,25 +386,50 @@ class _DetailHotelPageState extends State<DetailHotelPage> {
                         ],
                       ),
 
-                      SizedBox(
-                        height: 95,
-                        child: ListView(
-                          scrollDirection: Axis.horizontal,
-                          children: const [
-                            _ReviewCard(
-                              name: 'Andi Pratama',
-                              text:
-                                  'Kamar sangat bersih dan nyaman. Pelayanan staf sangat ramah!',
+                      if (_isLoadingReviews)
+                        const SizedBox(
+                          height: 80,
+                          child: Center(child: CircularProgressIndicator()),
+                        )
+                      else if (_reviews.isEmpty)
+                        const SizedBox(
+                          height: 80,
+                          child: Center(
+                            child: Text(
+                              'Belum ada review',
+                              style: TextStyle(color: AppColors.mutedText),
                             ),
-                            SizedBox(width: 10),
-                            _ReviewCard(
-                              name: 'Siska',
-                              text:
-                                  'Sarapan lengkap dan lokasinya sangat strategis.',
-                            ),
-                          ],
+                          ),
+                        )
+                      else
+                        SizedBox(
+                          height: 186,
+                          child: ListView.builder(
+                            scrollDirection: Axis.horizontal,
+                            itemCount: _reviews.length,
+                            itemBuilder: (context, index) {
+                              final review = _reviews[index];
+                              final userName = review.user?.nama ?? 'Anonymous';
+                              final reviewText =
+                                  review.keterangan ??
+                                  (review.rating > 0
+                                      ? 'Memberikan rating ${review.rating}/5'
+                                      : 'Belum ada ulasan');
+                              final photoUrls = review.foto
+                                  .map((f) => f.resolvedUrl)
+                                  .toList();
+
+                              return Padding(
+                                padding: const EdgeInsets.only(right: 10),
+                                child: _ReviewCard(
+                                  name: userName,
+                                  text: reviewText,
+                                  photoUrls: photoUrls,
+                                ),
+                              );
+                            },
+                          ),
                         ),
-                      ),
 
                       const SizedBox(height: 22),
 
@@ -376,50 +528,88 @@ class _FacilityChip extends StatelessWidget {
 class _ReviewCard extends StatelessWidget {
   final String name;
   final String text;
+  final List<String> photoUrls;
 
-  const _ReviewCard({required this.name, required this.text});
+  const _ReviewCard({
+    required this.name,
+    required this.text,
+    this.photoUrls = const [],
+  });
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 190,
+      width: 200,
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
         color: AppColors.background,
         borderRadius: BorderRadius.circular(18),
       ),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const CircleAvatar(
-            radius: 17,
-            backgroundColor: AppColors.accent,
-            child: Icon(Icons.person, size: 18),
-          ),
-          const SizedBox(width: 8),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
+          // User info
+          Row(
+            children: [
+              const CircleAvatar(
+                radius: 17,
+                backgroundColor: AppColors.accent,
+                child: Icon(Icons.person, size: 18),
+              ),
+              const SizedBox(width: 8),
+              Expanded(
+                child: Text(
                   name,
                   style: const TextStyle(
                     fontSize: 11,
                     fontWeight: FontWeight.w800,
                   ),
                 ),
-                const SizedBox(height: 4),
-                Text(
-                  text,
-                  maxLines: 3,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    fontSize: 10,
-                    color: AppColors.textDisabled,
-                  ),
-                ),
-              ],
-            ),
+              ),
+            ],
           ),
+          const SizedBox(height: 6),
+
+          // Review text
+          Text(
+            text,
+            maxLines: 2,
+            overflow: TextOverflow.ellipsis,
+            style: const TextStyle(fontSize: 10, color: AppColors.textDisabled),
+          ),
+          const SizedBox(height: 6),
+
+          // Photos row
+          if (photoUrls.isNotEmpty)
+            SizedBox(
+              height: 50,
+              child: ListView.separated(
+                scrollDirection: Axis.horizontal,
+                itemCount: photoUrls.length > 3 ? 3 : photoUrls.length,
+                separatorBuilder: (_, _) => const SizedBox(width: 4),
+                itemBuilder: (context, index) {
+                  return ClipRRect(
+                    borderRadius: BorderRadius.circular(6),
+                    child: Image.network(
+                      photoUrls[index],
+                      width: 50,
+                      height: 50,
+                      fit: BoxFit.cover,
+                      errorBuilder: (_, _, _) => Container(
+                        width: 50,
+                        height: 50,
+                        color: AppColors.border,
+                        child: const Icon(
+                          Icons.broken_image,
+                          size: 20,
+                          color: AppColors.mutedText,
+                        ),
+                      ),
+                    ),
+                  );
+                },
+              ),
+            ),
         ],
       ),
     );

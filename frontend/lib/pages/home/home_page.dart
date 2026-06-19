@@ -1,10 +1,13 @@
 import 'package:flutter/material.dart';
 
+import '../../config/api_config.dart';
 import '../../constants/app_colors.dart';
 import '../../models/hotel_model.dart';
 import '../../services/hotel_service.dart';
 import '../../services/auth_service.dart';
+import '../../services/notification_service.dart';
 import '../../models/search_filter_model.dart';
+import '../notification/notification_page.dart';
 
 class HomePage extends StatefulWidget {
   final ValueChanged<SearchFilterModel>? onSearchSubmitted;
@@ -23,18 +26,59 @@ class _HomePageState extends State<HomePage> {
   DateTime? checkOut;
   int guests = 2;
   String userName = '';
+  String? avatarUrl;
+  int notificationCount = 0;
 
   @override
   void initState() {
     super.initState();
     hotelsFuture = HotelService.fetchHotels(limit: 5);
-    _loadUserName();
+    _loadUserProfile();
+    _loadNotificationCount();
   }
 
-  Future<void> _loadUserName() async {
-    final nama = await AuthService().getUserName();
+  // Ambil nama + foto profil user yang sedang login.
+  Future<void> _loadUserProfile() async {
+    final profile = await AuthService().getProfile();
     if (!mounted) return;
-    setState(() => userName = nama);
+
+    setState(() {
+      final nama = profile?['nama'];
+      if (nama is String && nama.isNotEmpty) userName = nama;
+      avatarUrl = _resolveFotoUrl(profile?['foto_profil']);
+    });
+  }
+
+  // Ubah path foto_profil dari backend menjadi URL lengkap yang bisa diakses.
+  String? _resolveFotoUrl(dynamic foto) {
+    final path = foto?.toString().trim();
+    if (path == null || path.isEmpty) return null;
+    if (path.startsWith('http')) return path;
+
+    final clean = path.startsWith('/') ? path.substring(1) : path;
+
+    // Foto hotel & kamar dari Supabase Storage
+    if (clean.startsWith('hotels/') || clean.startsWith('rooms/')) {
+      return '${ApiConfig.supabaseStorageUrl}/$clean';
+    }
+
+    // Fallback: Railway storage
+    final host = ApiConfig.baseUrl.replaceAll('/api', '');
+    return '$host/storage/$clean';
+  }
+
+  Future<void> _loadNotificationCount() async {
+    final count = await NotificationService.getUnreadCount();
+    if (!mounted) return;
+    setState(() => notificationCount = count);
+  }
+
+  Future<void> _openNotifications() async {
+    await Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const NotificationPage()),
+    );
+    // Refresh badge setelah kembali dari halaman notifikasi.
+    _loadNotificationCount();
   }
 
   String get locationText {
@@ -142,10 +186,16 @@ class _HomePageState extends State<HomePage> {
         children: [
           Row(
             children: [
-              const CircleAvatar(
+              CircleAvatar(
                 radius: 22,
                 backgroundColor: AppColors.white,
-                child: Icon(Icons.person, color: AppColors.primary),
+                backgroundImage:
+                    (avatarUrl != null && avatarUrl!.isNotEmpty)
+                        ? NetworkImage(avatarUrl!)
+                        : null,
+                child: (avatarUrl == null || avatarUrl!.isEmpty)
+                    ? const Icon(Icons.person, color: AppColors.primary)
+                    : null,
               ),
 
               const SizedBox(width: 12),
@@ -169,12 +219,9 @@ class _HomePageState extends State<HomePage> {
                 ),
               ),
 
-              CircleAvatar(
-                backgroundColor: Colors.white.withOpacity(0.2),
-                child: const Icon(
-                  Icons.notifications_none,
-                  color: AppColors.white,
-                ),
+              _NotificationBell(
+                count: notificationCount,
+                onTap: _openNotifications,
               ),
             ],
           ),
@@ -789,6 +836,59 @@ class _EmptyState extends StatelessWidget {
           color: AppColors.textDisabled,
           fontWeight: FontWeight.w700,
         ),
+      ),
+    );
+  }
+}
+
+class _NotificationBell extends StatelessWidget {
+  final int count;
+  final VoidCallback onTap;
+
+  const _NotificationBell({required this.count, required this.onTap});
+
+  @override
+  Widget build(BuildContext context) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Stack(
+        clipBehavior: Clip.none,
+        children: [
+          CircleAvatar(
+            backgroundColor: Colors.white.withOpacity(0.2),
+            child: const Icon(
+              Icons.notifications_none,
+              color: AppColors.white,
+            ),
+          ),
+
+          if (count > 0)
+            Positioned(
+              right: -2,
+              top: -2,
+              child: Container(
+                padding: const EdgeInsets.all(4),
+                constraints: const BoxConstraints(minWidth: 18, minHeight: 18),
+                decoration: BoxDecoration(
+                  color: AppColors.danger,
+                  shape: BoxShape.circle,
+                  border: Border.all(color: AppColors.primary, width: 1.5),
+                ),
+                child: Center(
+                  child: Text(
+                    count > 9 ? '9+' : '$count',
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(
+                      color: AppColors.white,
+                      fontSize: 10,
+                      fontWeight: FontWeight.w900,
+                      height: 1,
+                    ),
+                  ),
+                ),
+              ),
+            ),
+        ],
       ),
     );
   }

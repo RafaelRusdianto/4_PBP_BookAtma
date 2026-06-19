@@ -39,12 +39,8 @@ class _RequestBookingPageState extends State<RequestBookingPage> {
 
     if (booking == null) {
       return Scaffold(
-        appBar: AppBar(
-          title: const Text('Detail Pemesanan'),
-        ),
-        body: const Center(
-          child: Text('Data booking belum tersedia'),
-        ),
+        appBar: AppBar(title: const Text('Detail Pemesanan')),
+        body: const Center(child: Text('Data booking belum tersedia')),
       );
     }
 
@@ -182,20 +178,17 @@ class _RequestBookingPageState extends State<RequestBookingPage> {
                     Wrap(
                       spacing: 8,
                       runSpacing: 8,
-                      children: List.generate(
-                        requestOptions.length,
-                        (index) {
-                          return _RequestChip(
-                            text: requestOptions[index],
-                            selected: selectedRequest == index,
-                            onTap: () {
-                              setState(() {
-                                selectedRequest = index;
-                              });
-                            },
-                          );
-                        },
-                      ),
+                      children: List.generate(requestOptions.length, (index) {
+                        return _RequestChip(
+                          text: requestOptions[index],
+                          selected: selectedRequest == index,
+                          onTap: () {
+                            setState(() {
+                              selectedRequest = index;
+                            });
+                          },
+                        );
+                      }),
                     ),
                     const SizedBox(height: 14),
                     const Text(
@@ -250,10 +243,7 @@ class _AppBarTitle extends StatelessWidget {
   final String title;
   final VoidCallback onBack;
 
-  const _AppBarTitle({
-    required this.title,
-    required this.onBack,
-  });
+  const _AppBarTitle({required this.title, required this.onBack});
 
   @override
   Widget build(BuildContext context) {
@@ -271,10 +261,7 @@ class _AppBarTitle extends StatelessWidget {
             child: Text(
               title,
               textAlign: TextAlign.center,
-              style: const TextStyle(
-                fontWeight: FontWeight.w800,
-                fontSize: 15,
-              ),
+              style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 15),
             ),
           ),
           const SizedBox(width: 48),
@@ -301,12 +288,16 @@ class _HotelSummaryCard extends StatelessWidget {
         children: [
           ClipRRect(
             borderRadius: BorderRadius.circular(10),
-            child: Image.network(
-              booking.room.imageUrl,
-              width: 82,
-              height: 82,
-              fit: BoxFit.cover,
-            ),
+            child: booking.room.imageUrl.isNotEmpty
+                ? Image.network(
+                    booking.room.imageUrl,
+                    width: 82,
+                    height: 82,
+                    fit: BoxFit.cover,
+                    errorBuilder: (context, error, stackTrace) =>
+                        _buildImagePlaceholder(),
+                  )
+                : _buildImagePlaceholder(),
           ),
           const SizedBox(width: 12),
           Expanded(
@@ -333,14 +324,10 @@ class _HotelSummaryCard extends StatelessWidget {
                 const SizedBox(height: 4),
                 Row(
                   children: [
-                    const Icon(
-                      Icons.star,
-                      color: AppColors.accent,
-                      size: 14,
-                    ),
+                    const Icon(Icons.star, color: AppColors.accent, size: 14),
                     Expanded(
                       child: Text(
-                        ' ${booking.hotel.rating} (1,240 Review)',
+                        ' ${booking.hotel.rating} ',
                         style: const TextStyle(
                           fontSize: 10,
                           color: AppColors.textDisabled,
@@ -364,24 +351,31 @@ class _HotelSummaryCard extends StatelessWidget {
       ),
     );
   }
+
+  Widget _buildImagePlaceholder() {
+    return Container(
+      width: 82,
+      height: 82,
+      color: AppColors.softBlue,
+      child: const Icon(
+        Icons.image_outlined,
+        color: AppColors.mutedText,
+        size: 32,
+      ),
+    );
+  }
 }
 
 class _SectionTitle extends StatelessWidget {
   final String title;
 
-  const _SectionTitle({
-    required this.title,
-  });
+  const _SectionTitle({required this.title});
 
   @override
   Widget build(BuildContext context) {
     return Row(
       children: [
-        const Icon(
-          Icons.info,
-          color: AppColors.primary,
-          size: 15,
-        ),
+        const Icon(Icons.info, color: AppColors.primary, size: 15),
         const SizedBox(width: 6),
         Text(
           title,
