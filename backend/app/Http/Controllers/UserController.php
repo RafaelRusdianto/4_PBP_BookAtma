@@ -38,7 +38,8 @@ class UserController extends Controller
     {
         $request->validate([
             'email' => 'required|email',
-            'password' => 'required'
+            'password' => 'required',
+            'no_hp' => 'required|string|max:20'
         ]);
 
         $user = User::where('email', $request->email)->first();

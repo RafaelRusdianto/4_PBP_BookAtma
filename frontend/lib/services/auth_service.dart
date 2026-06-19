@@ -10,6 +10,7 @@ class AuthService {
   Future<Map<String, dynamic>> login({
     required String email,
     required String password,
+    required String notelp,
   }) async {
     try {
       final response = await http.post(
@@ -61,7 +62,8 @@ class AuthService {
     } catch (e) {
       return {
         'success': false,
-        'message': 'Tidak dapat terhubung ke server. Periksa backend dan URL API. (${e.toString()})',
+        'message':
+            'Tidak dapat terhubung ke server. Periksa backend dan URL API. (${e.toString()})',
       };
     }
   }
@@ -140,11 +142,7 @@ class AuthService {
           'Content-Type': 'application/json',
         },
 
-        body: jsonEncode({
-          'email': email,
-          'nama': nama,
-          'id_token': idToken,
-        }),
+        body: jsonEncode({'email': email, 'nama': nama, 'id_token': idToken}),
       );
 
       final data = _decodeObject(response.body);
@@ -185,7 +183,8 @@ class AuthService {
     } catch (e) {
       return {
         'success': false,
-        'message': 'Tidak dapat terhubung ke server. Periksa backend dan URL API. (${e.toString()})',
+        'message':
+            'Tidak dapat terhubung ke server. Periksa backend dan URL API. (${e.toString()})',
       };
     }
   }
@@ -343,10 +342,7 @@ class AuthService {
     return {};
   }
 
-  String _errorMessage(
-    Map<String, dynamic> data, {
-    required String fallback,
-  }) {
+  String _errorMessage(Map<String, dynamic> data, {required String fallback}) {
     final message = data['message'];
     if (message is String && message.isNotEmpty) return message;
 

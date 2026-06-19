@@ -21,3 +21,11 @@ String? validateRequiredPassword(String? value) {
 
   return null;
 }
+
+String? validateRequiredNotelp(String? value) {
+  if ((value ?? '').isEmpty) {
+    return 'No telepon wajib diisi';
+  }
+
+  return null;
+}

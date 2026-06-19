@@ -25,6 +25,7 @@ class _LoginPageState extends State<LoginPage> {
 
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
+  final _notelpController = TextEditingController();
 
   bool _obscurePassword = true;
   bool _isSubmitting = false;
@@ -33,6 +34,7 @@ class _LoginPageState extends State<LoginPage> {
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
+    _notelpController.dispose();
 
     super.dispose();
   }
@@ -51,6 +53,7 @@ class _LoginPageState extends State<LoginPage> {
     final result = await AuthService().login(
       email: _emailController.text.trim(),
       password: _passwordController.text,
+      notelp: _notelpController.text.trim(),
     );
 
     if (!mounted) return;
@@ -134,6 +137,16 @@ class _LoginPageState extends State<LoginPage> {
               ),
             ),
 
+            const SizedBox(height: 16),
+
+            AuthTextField(
+              label: 'No Telepon',
+              hint: 'Notelp aktif kamu',
+              controller: _notelpController,
+              keyboardType: TextInputType.phone,
+              validator: validateRequiredNotelp,
+            ),
+
             const SizedBox(height: 22),
 
             PrimaryButton(
@@ -149,15 +162,14 @@ class _LoginPageState extends State<LoginPage> {
 
             GoogleButton(
               onSuccess: () {
-                Navigator.of(context).pushNamedAndRemoveUntil(
-                  AppRoutes.main,
-                  (route) => false,
-                );
+                Navigator.of(
+                  context,
+                ).pushNamedAndRemoveUntil(AppRoutes.main, (route) => false);
               },
               onError: (message) {
-                ScaffoldMessenger.of(context).showSnackBar(
-                  SnackBar(content: Text(message)),
-                );
+                ScaffoldMessenger.of(
+                  context,
+                ).showSnackBar(SnackBar(content: Text(message)));
               },
             ),
           ],
