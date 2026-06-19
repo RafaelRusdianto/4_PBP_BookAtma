@@ -368,8 +368,8 @@ class OrderDetailPage extends StatelessWidget {
                   ),
                   child: Center(
                     child: Container(
-                      width: 136,
-                      height: 136,
+                      width: 180,
+                      height: 180,
                       padding: const EdgeInsets.all(12),
                       decoration: BoxDecoration(
                         color: AppColors.white,
@@ -1207,9 +1207,7 @@ class _SubmittedReviewState extends State<_SubmittedReview> {
     setState(() => _isDeleting = false);
 
     ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(result['message'] ?? 'Gagal menghapus review'),
-      ),
+      SnackBar(content: Text(result['message'] ?? 'Gagal menghapus review')),
     );
 
     if (result['success'] == true) widget.onChanged();
