@@ -78,6 +78,17 @@ class _DetailHotelPageState extends State<DetailHotelPage> {
     }
   }
 
+  // Rating yang ditampilkan dihitung dari review yang benar-benar tampil di
+  // halaman ini, agar selalu konsisten dengan daftar review di bawah.
+  double _displayRating(HotelModel hotel) {
+    final ratings =
+        _reviews.map((r) => r.rating).where((rating) => rating > 0).toList();
+
+    if (ratings.isEmpty) return hotel.rating;
+
+    return ratings.reduce((a, b) => a + b) / ratings.length;
+  }
+
   void _startAutoSlide() {
     _autoSlideTimer?.cancel();
     if (_totalImages <= 1) return;
@@ -270,42 +281,34 @@ class _DetailHotelPageState extends State<DetailHotelPage> {
                       ),
                       const SizedBox(height: 6),
 
-                      Row(
-                        children: [
-                          const Icon(
-                            Icons.star,
-                            color: AppColors.accent,
-                            size: 16,
-                          ),
-                          const Icon(
-                            Icons.star,
-                            color: AppColors.accent,
-                            size: 16,
-                          ),
-                          const Icon(
-                            Icons.star,
-                            color: AppColors.accent,
-                            size: 16,
-                          ),
-                          const Icon(
-                            Icons.star,
-                            color: AppColors.accent,
-                            size: 16,
-                          ),
-                          const Icon(
-                            Icons.star,
-                            color: AppColors.accent,
-                            size: 16,
-                          ),
-                          const SizedBox(width: 6),
-                          Text(
-                            '(${selectedHotel.rating}/5)',
-                            style: const TextStyle(
-                              color: AppColors.textDisabled,
-                              fontSize: 12,
-                            ),
-                          ),
-                        ],
+                      Builder(
+                        builder: (context) {
+                          final rating = _displayRating(selectedHotel);
+                          final rounded = rating.round();
+
+                          return Row(
+                            children: [
+                              ...List.generate(
+                                5,
+                                (index) => Icon(
+                                  index < rounded
+                                      ? Icons.star
+                                      : Icons.star_border,
+                                  color: AppColors.accent,
+                                  size: 16,
+                                ),
+                              ),
+                              const SizedBox(width: 6),
+                              Text(
+                                '(${rating.toStringAsFixed(1)}/5)',
+                                style: const TextStyle(
+                                  color: AppColors.textDisabled,
+                                  fontSize: 12,
+                                ),
+                              ),
+                            ],
+                          );
+                        },
                       ),
 
                       const SizedBox(height: 8),

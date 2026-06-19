@@ -25,9 +25,12 @@ class UserController extends Controller
             'no_hp' => $request->no_hp
         ]);
 
+        $token = $user->createToken('auth_token')->plainTextToken;
+
         return response()->json([
             'message' => 'Register berhasil',
-            'data' => $user
+            'user' => $user,
+            'token' => $token
         ], 201);
     }
 

@@ -92,6 +92,28 @@ class AuthService {
       final data = _decodeObject(response.body);
 
       if (response.statusCode == 201) {
+        final token = data['token'];
+
+        if (token is! String || token.isEmpty) {
+          return {
+            'success': false,
+            'message': 'Token tidak ditemukan di response server',
+          };
+        }
+
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('token', token);
+
+        final namaUser = data['user']?['nama'];
+        if (namaUser is String && namaUser.isNotEmpty) {
+          await prefs.setString('nama', namaUser);
+        }
+
+        final idUser = data['user']?['id_user'];
+        if (idUser != null) {
+          await prefs.setInt('id_user', int.tryParse(idUser.toString()) ?? 0);
+        }
+
         return {'success': true, 'message': data['message']};
       } else {
         return {

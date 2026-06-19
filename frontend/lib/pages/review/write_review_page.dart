@@ -6,6 +6,7 @@ import 'package:image_picker/image_picker.dart';
 import '../../constants/app_colors.dart';
 import '../../models/booking_model.dart';
 import '../../services/review_service.dart';
+import '../../widgets/success_dialog.dart';
 
 class WriteReviewPage extends StatefulWidget {
   final BookingModel booking;
@@ -27,6 +28,7 @@ class WriteReviewPage extends StatefulWidget {
 
 class _WriteReviewPageState extends State<WriteReviewPage> {
   late final TextEditingController _reviewController;
+  late int _rating;
   bool _isSubmitting = false;
   final List<File> _selectedPhotos = [];
   final ImagePicker _picker = ImagePicker();
@@ -36,6 +38,7 @@ class _WriteReviewPageState extends State<WriteReviewPage> {
   void initState() {
     super.initState();
     _reviewController = TextEditingController(text: widget.existingKeterangan);
+    _rating = widget.rating;
   }
 
   @override
@@ -91,18 +94,13 @@ class _WriteReviewPageState extends State<WriteReviewPage> {
 
   Future<void> _submitReview() async {
     if (_isSubmitting) return;
-    if (_selectedPhotos.isEmpty) {
-      setState(() {
-        _errorMessage = 'Minimal 1 foto harus diupload';
-      });
-      return;
-    }
 
     setState(() => _isSubmitting = true);
 
-    // 1. Update keterangan
-    final result = await ReviewService.updateKeterangan(
+    // 1. Update rating + keterangan sekaligus
+    final result = await ReviewService.updateReview(
       idReview: widget.idReview,
+      rating: _rating,
       keterangan: _reviewController.text.trim(),
     );
 
@@ -111,9 +109,7 @@ class _WriteReviewPageState extends State<WriteReviewPage> {
     if (result['success'] != true) {
       setState(() => _isSubmitting = false);
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(result['message'] ?? 'Gagal mengirim ulasan'),
-        ),
+        SnackBar(content: Text(result['message'] ?? 'Gagal mengirim ulasan')),
       );
       return;
     }
@@ -140,10 +136,22 @@ class _WriteReviewPageState extends State<WriteReviewPage> {
 
     setState(() => _isSubmitting = false);
 
-    ScaffoldMessenger.of(context).showSnackBar(
-      const SnackBar(content: Text('Ulasan berhasil dikirim')),
+    if (!mounted) return;
+
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (dialogContext) => SuccessDialog(
+        title: 'Ulasan Berhasil Dikirim!',
+        message:
+            'Terima kasih atas ulasanmu. Masukanmu sangat membantu pengguna lain.',
+        buttonLabel: 'Selesai',
+        onStart: () {
+          Navigator.pop(dialogContext); // tutup popup
+          Navigator.pop(context, true); // kembali ke halaman sebelumnya
+        },
+      ),
     );
-    Navigator.pop(context, true);
   }
 
   @override
@@ -179,17 +187,22 @@ class _WriteReviewPageState extends State<WriteReviewPage> {
                       width: 64,
                       height: 64,
                       color: AppColors.softBlue,
-                      child: booking.hotel.imageUrl != null &&
+                      child:
+                          booking.hotel.imageUrl != null &&
                               booking.hotel.imageUrl!.isNotEmpty
                           ? Image.network(
                               booking.hotel.imageUrl!,
                               fit: BoxFit.cover,
                               errorBuilder: (context, error, stackTrace) =>
-                                  const Icon(Icons.hotel_outlined,
-                                      color: AppColors.mutedText),
+                                  const Icon(
+                                    Icons.hotel_outlined,
+                                    color: AppColors.mutedText,
+                                  ),
                             )
-                          : const Icon(Icons.hotel_outlined,
-                              color: AppColors.mutedText),
+                          : const Icon(
+                              Icons.hotel_outlined,
+                              color: AppColors.mutedText,
+                            ),
                     ),
                   ),
                   const SizedBox(width: 12),
@@ -258,21 +271,25 @@ class _WriteReviewPageState extends State<WriteReviewPage> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.center,
                     children: List.generate(5, (index) {
-                      return Padding(
-                        padding: const EdgeInsets.symmetric(horizontal: 4),
-                        child: Icon(
-                          index < widget.rating
-                              ? Icons.star
-                              : Icons.star_border,
-                          color: AppColors.accent,
-                          size: 36,
+                      final star = index + 1;
+                      return GestureDetector(
+                        onTap: _isSubmitting
+                            ? null
+                            : () => setState(() => _rating = star),
+                        child: Padding(
+                          padding: const EdgeInsets.symmetric(horizontal: 4),
+                          child: Icon(
+                            star <= _rating ? Icons.star : Icons.star_border,
+                            color: AppColors.accent,
+                            size: 36,
+                          ),
                         ),
                       );
                     }),
                   ),
                   const SizedBox(height: 8),
                   Text(
-                    '${widget.rating}/5',
+                    '$_rating/5',
                     style: const TextStyle(
                       fontSize: 14,
                       fontWeight: FontWeight.w700,
@@ -468,9 +485,8 @@ class _WriteReviewPageState extends State<WriteReviewPage> {
 
                   // Red text rules
                   Text(
-                    '* Minimal 1 foto, maksimal 5 foto\n'
-                    '* Format: JPG, JPEG, PNG, GIF, atau WebP\n'
-                    '* Ukuran maksimal 5 MB per foto',
+                    '* Maksimal 5 foto\n'
+                    '* Format: JPG, JPEG, PNG, GIF, atau WebP\n',
                     style: TextStyle(
                       color: AppColors.danger.withValues(alpha: 0.85),
                       fontSize: 11,
@@ -537,8 +553,18 @@ class _WriteReviewPageState extends State<WriteReviewPage> {
   String _shortDate(DateTime? date) {
     if (date == null) return '-';
     const months = [
-      'Jan', 'Feb', 'Mar', 'Apr', 'Mei', 'Jun',
-      'Jul', 'Agu', 'Sep', 'Okt', 'Nov', 'Des',
+      'Jan',
+      'Feb',
+      'Mar',
+      'Apr',
+      'Mei',
+      'Jun',
+      'Jul',
+      'Agu',
+      'Sep',
+      'Okt',
+      'Nov',
+      'Des',
     ];
     return '${date.day} ${months[date.month - 1]} ${date.year}';
   }

@@ -18,6 +18,7 @@ import '../../pages/orders/order_page.dart';
 import '../../pages/profile/profile_page.dart';
 import '../../pages/auth/experience_settings_page.dart';
 import '../../pages/search/search_page.dart';
+import '../../pages/notification/notification_page.dart';
 
 class AppRoutes {
   static const String loading = '/loading';
@@ -39,6 +40,7 @@ class AppRoutes {
   static const String order = '/order';
   static const String profile = '/profile';
   static const String search = '/search';
+  static const String notification = '/notification';
 
   static final Map<String, WidgetBuilder> routes = {
     loading: (context) => const LoadingScreen(),
@@ -60,5 +62,6 @@ class AppRoutes {
     profile: (context) => const ProfilePage(),
     settings: (context) => const ExperienceSettingsPage(),
     search: (context) => const SearchPage(),
+    notification: (context) => const NotificationPage(),
   };
 }

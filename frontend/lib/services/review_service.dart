@@ -105,6 +105,72 @@ class ReviewService {
     }
   }
 
+  /// Edit review: ubah rating dan/atau keterangan sekaligus
+  static Future<Map<String, dynamic>> updateReview({
+    required int idReview,
+    int? rating,
+    String? keterangan,
+  }) async {
+    try {
+      final uri = Uri.parse('${ApiConfig.baseUrl}/review/$idReview');
+      final res = await http.put(
+        uri,
+        headers: await _authHeaders(),
+        body: json.encode({
+          'rating': ?rating,
+          'keterangan': ?keterangan,
+        }),
+      );
+
+      final body = json.decode(res.body);
+
+      if (res.statusCode == 200) {
+        return {
+          'success': true,
+          'message': body['message'] ?? 'Review berhasil diperbarui',
+          'data': body['data'],
+        };
+      }
+
+      return {
+        'success': false,
+        'message': body['message'] ?? 'Gagal memperbarui review',
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Tidak dapat terhubung ke server: $e',
+      };
+    }
+  }
+
+  /// Hapus review beserta semua fotonya
+  static Future<Map<String, dynamic>> deleteReview(int idReview) async {
+    try {
+      final uri = Uri.parse('${ApiConfig.baseUrl}/review/$idReview');
+      final res = await http.delete(uri, headers: await _authHeaders());
+
+      final body = json.decode(res.body);
+
+      if (res.statusCode == 200) {
+        return {
+          'success': true,
+          'message': body['message'] ?? 'Review berhasil dihapus',
+        };
+      }
+
+      return {
+        'success': false,
+        'message': body['message'] ?? 'Gagal menghapus review',
+      };
+    } catch (e) {
+      return {
+        'success': false,
+        'message': 'Tidak dapat terhubung ke server: $e',
+      };
+    }
+  }
+
   /// Upload foto untuk review tertentu
   static Future<Map<String, dynamic>> uploadFoto({
     required int idReview,
