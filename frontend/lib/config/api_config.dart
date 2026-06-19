@@ -8,8 +8,10 @@ class ApiConfig {
   // Untuk HP asli. Ganti IP sesuai IPv4 laptop kamu.
 
   static const String baseUrl =
-      'https://4pbpbookatma-production.up.railway.app/api';
+      'http://4pbpbookatma-production.up.railway.app/api';
 
+// static const String baseUrl =
+  //     'http://192.168.1.100:8000/api';
   // Untuk nanti kalau backend Laravel sudah di-hosting.
   // static const String hostedBaseUrl = 'https://domain-kamu.com/api';
 
