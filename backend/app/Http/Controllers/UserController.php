@@ -42,7 +42,9 @@ class UserController extends Controller
             'no_hp' => 'required|string|max:20'
         ]);
 
-        $user = User::where('email', $request->email)->first();
+        $user = User::where('email', $request->email)
+            ->where('no_hp', $request->no_hp)
+            ->first();
 
         if (!$user || !Hash::check($request->password, $user->password)) {
             return response()->json([

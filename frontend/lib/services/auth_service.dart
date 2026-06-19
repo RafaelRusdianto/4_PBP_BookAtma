@@ -21,7 +21,11 @@ class AuthService {
           'Content-Type': 'application/json',
         },
 
-        body: jsonEncode({'email': email, 'password': password}),
+        body: jsonEncode({
+          'email': email,
+          'password': password,
+          'no_hp': notelp,
+        }),
       );
 
       final data = _decodeObject(response.body);
