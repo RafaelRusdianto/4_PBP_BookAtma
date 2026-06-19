@@ -44,6 +44,22 @@ class HotelController extends Controller
         $checkIn = $request->query('check_in');
         $checkOut = $request->query('check_out');
         $currentProvince = $request->query('current_province');
+        $minRating = $request->query('min_rating');
+
+        // Deteksi otomatis: kalau keyword adalah angka, treat sebagai rating filter
+        // if ($keyword && is_numeric($keyword)) {
+        //     $minRating = $keyword;
+        //     $keyword = null;
+        // }
+
+        // Deteksi: kalau keyword cocok dengan nama fasilitas → cari by facility
+        // $facilityHotels = null;
+        // if ($keyword) {
+        //     $facilityHotels = Hotel::whereHas('kamar.fasilitas', function ($q) use ($keyword) {
+        //         $q->where('nama_fasilitas', 'like', '%' . $keyword . '%');
+        //     })->pluck('id_hotel');
+        // }
+
 
         $roomFilter = function ($kamarQuery) use ($guest, $checkIn, $checkOut) {
             $kamarQuery->where('status', 'available');
@@ -103,6 +119,12 @@ class HotelController extends Controller
                     ]
                 );
             })
+            // ->when($minRating, function ($query) use ($minRating) {
+            //     $query->where('avg_rating', '>=', (float) $minRating);
+            // })
+            // ->when($keyword && $facilityHotels?->isNotEmpty(), function ($query) use ($facilityHotels) {
+            //     $query->whereIn('id_hotel', $facilityHotels);
+            // })
             ->orderByDesc('avg_rating')
             ->get();
 
