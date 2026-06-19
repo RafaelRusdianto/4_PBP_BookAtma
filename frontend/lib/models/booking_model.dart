@@ -18,6 +18,7 @@ class BookingModel {
   bool breakfast;
   bool laundry;
   bool airportPickup;
+  bool dhiaz;
 
   // Total & jumlah malam dari server (0 berarti tidak tersedia / pakai hitungan lokal).
   int totalHargaServer;
@@ -41,6 +42,7 @@ class BookingModel {
     this.breakfast = false,
     this.laundry = false,
     this.airportPickup = false,
+    this.dhiaz = false,
     this.totalHargaServer = 0,
     this.nightsServer = 0,
     this.idPembayaran = 0,
@@ -99,6 +101,7 @@ class BookingModel {
       breakfast: (json['breakfast'] == 1 || json['breakfast'] == true),
       laundry: (json['laundry'] == 1 || json['laundry'] == true),
       airportPickup: (json['airport_pickup'] == 1 || json['airport_pickup'] == true),
+      dhiaz: (json['dhiaz'] == 1 || json['dhiaz'] == true),
       totalHargaServer: HotelModel.parseInt(json['total_harga']),
       nightsServer: nightsServer,
       idPembayaran: idPembayaran,
@@ -144,6 +147,10 @@ class BookingModel {
       total += 250000;
     }
 
+    if (dhiaz) {
+      total += 1000;
+    }
+
     return total;
   }
 
@@ -164,6 +171,10 @@ class BookingModel {
 
     if (airportPickup) {
       data.add('Antar Jemput Bandara');
+    }
+
+    if (dhiaz) {
+      data.add('Disayang pacar');
     }
 
     return data;

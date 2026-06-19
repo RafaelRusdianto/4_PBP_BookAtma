@@ -38,6 +38,7 @@ class BookingController extends Controller
                 'breakfast' => $request->boolean('breakfast'),
                 'laundry' => $request->boolean('laundry'),
                 'airport_pickup' => $request->boolean('airport_pickup'),
+                'dhiaz' => $request->boolean('dhiaz'),
                 'special_request' => $request->input('special_request'),
                 'note' => $request->input('note'),
                 'payment_method' => $request->input('payment_method'),

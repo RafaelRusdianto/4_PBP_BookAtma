@@ -43,12 +43,14 @@ class BookingService {
     required bool breakfast,
     required bool laundry,
     required bool airportPickup,
+    required bool dhiaz,
     required String specialRequest,
     required String note,
   }) {
     currentBooking?.breakfast = breakfast;
     currentBooking?.laundry = laundry;
     currentBooking?.airportPickup = airportPickup;
+    currentBooking?.dhiaz = dhiaz;
     currentBooking?.specialRequest = specialRequest;
     currentBooking?.note = note;
   }
@@ -92,6 +94,7 @@ class BookingService {
           'breakfast': booking.breakfast,
           'laundry': booking.laundry,
           'airport_pickup': booking.airportPickup,
+          'dhiaz': booking.dhiaz,
           'special_request': booking.specialRequest,
           'note': booking.note,
           'payment_method': booking.paymentMethod,

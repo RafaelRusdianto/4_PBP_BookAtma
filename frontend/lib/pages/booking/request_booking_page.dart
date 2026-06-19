@@ -15,6 +15,7 @@ class _RequestBookingPageState extends State<RequestBookingPage> {
   bool breakfast = false;
   bool laundry = false;
   bool airport = false;
+  bool dhiaz = false;
 
   int selectedRequest = -1;
 
@@ -82,6 +83,7 @@ class _RequestBookingPageState extends State<RequestBookingPage> {
                     breakfast: breakfast,
                     laundry: laundry,
                     airportPickup: airport,
+                    dhiaz: dhiaz,
                     specialRequest: selectedRequest == -1
                         ? ''
                         : requestOptions[selectedRequest],
@@ -169,6 +171,17 @@ class _RequestBookingPageState extends State<RequestBookingPage> {
                         setState(() {
                           airport = !airport;
                           booking.airportPickup = airport;
+                        });
+                      },
+                    ),
+                    _AddOnItem(
+                      title: 'Disayang orang',
+                      price: 'IDR 5000 / trip',
+                      selected: dhiaz,
+                      onTap: () {
+                        setState(() {
+                          dhiaz = !dhiaz;
+                          booking.dhiaz = dhiaz;
                         });
                       },
                     ),

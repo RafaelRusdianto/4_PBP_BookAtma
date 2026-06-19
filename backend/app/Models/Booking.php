@@ -19,6 +19,7 @@ class Booking extends Model
         'breakfast',
         'laundry',
         'airport_pickup',
+        'dhiaz',
         'special_request',
         'note',
         'payment_method'
