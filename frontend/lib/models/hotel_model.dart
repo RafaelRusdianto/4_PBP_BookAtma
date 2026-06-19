@@ -150,11 +150,15 @@ class HotelModel {
     // Jika URL sudah lengkap (punya scheme), gunakan langsung
     if (uri != null && uri.hasScheme) return url;
 
-    // Path relatif → tambahkan base URL + /storage/ (karena file disimpan
-    // di storage/app/public/ dan diakses via symlink public/storage)
-    final apiUri = Uri.parse(ApiConfig.baseUrl);
     final cleanPath = url.startsWith('/') ? url.substring(1) : url;
 
+    // Foto hotel & kamar sudah diupload ke Supabase Storage
+    if (cleanPath.startsWith('hotels/') || cleanPath.startsWith('rooms/')) {
+      return '${ApiConfig.supabaseStorageUrl}/$cleanPath';
+    }
+
+    // Fallback: Railway storage (untuk foto lain seperti review)
+    final apiUri = Uri.parse(ApiConfig.baseUrl);
     return '${apiUri.scheme}://${apiUri.authority}/storage/$cleanPath';
   }
 

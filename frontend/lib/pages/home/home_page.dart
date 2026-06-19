@@ -55,8 +55,15 @@ class _HomePageState extends State<HomePage> {
     if (path == null || path.isEmpty) return null;
     if (path.startsWith('http')) return path;
 
-    final host = ApiConfig.baseUrl.replaceAll('/api', '');
     final clean = path.startsWith('/') ? path.substring(1) : path;
+
+    // Foto hotel & kamar dari Supabase Storage
+    if (clean.startsWith('hotels/') || clean.startsWith('rooms/')) {
+      return '${ApiConfig.supabaseStorageUrl}/$clean';
+    }
+
+    // Fallback: Railway storage
+    final host = ApiConfig.baseUrl.replaceAll('/api', '');
     return '$host/storage/$clean';
   }
 

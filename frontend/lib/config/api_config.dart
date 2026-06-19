@@ -17,4 +17,9 @@ class ApiConfig {
   // ID ini harus cocok dengan GOOGLE_CLIENT_ID di .env backend.
   static const String googleServerClientId =
       '611870269039-688jq7lamk42ucsq3524sfcc7nsoj0tg.apps.googleusercontent.com';
+
+  // Supabase Storage public URL untuk foto hotel & kamar.
+  // Path dari DB (hotels/... atau rooms/...) langsung dipakai setelah URL ini.
+  static const String supabaseStorageUrl =
+      'https://rfzyatyhbdsfykdhprwy.supabase.co/storage/v1/object/public';
 }

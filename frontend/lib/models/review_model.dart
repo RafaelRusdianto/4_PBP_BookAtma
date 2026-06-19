@@ -21,8 +21,15 @@ class ReviewFotoItem {
     final uri = Uri.tryParse(url);
     if (uri != null && uri.hasScheme) return url;
 
-    final apiUri = Uri.parse(ApiConfig.baseUrl);
     final cleanPath = url.startsWith('/') ? url.substring(1) : url;
+
+    // Foto hotel & kamar dari Supabase Storage
+    if (cleanPath.startsWith('hotels/') || cleanPath.startsWith('rooms/')) {
+      return '${ApiConfig.supabaseStorageUrl}/$cleanPath';
+    }
+
+    // Fallback: Railway storage
+    final apiUri = Uri.parse(ApiConfig.baseUrl);
     return '${apiUri.scheme}://${apiUri.authority}/storage/$cleanPath';
   }
 }
@@ -40,8 +47,15 @@ class ReviewUser {
     final uri = Uri.tryParse(url);
     if (uri != null && uri.hasScheme) return url;
 
-    final apiUri = Uri.parse(ApiConfig.baseUrl);
     final cleanPath = url.startsWith('/') ? url.substring(1) : url;
+
+    // Foto profil dari Supabase Storage
+    if (cleanPath.startsWith('hotels/') || cleanPath.startsWith('rooms/')) {
+      return '${ApiConfig.supabaseStorageUrl}/$cleanPath';
+    }
+
+    // Fallback: Railway storage
+    final apiUri = Uri.parse(ApiConfig.baseUrl);
     return '${apiUri.scheme}://${apiUri.authority}/storage/$cleanPath';
   }
 
